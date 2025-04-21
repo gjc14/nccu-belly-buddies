@@ -1,0 +1,4 @@
+{
+	// For Tailwind CSS Intellisense to support class attribute in Tiptap Editor
+	"tailwindCSS.experimental.classRegex": ["class:\\s*?[\"'`]([^\"'`]*).*?,"]
+}

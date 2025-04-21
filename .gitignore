@@ -1,0 +1,13 @@
+/node_modules/
+
+# React Router
+/.react-router/
+/build/
+
+.env
+
+.DS_Store
+
+/.cache
+
+/test
