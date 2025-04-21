@@ -11,6 +11,85 @@
 - **Authentication**: [Better Auth](https://www.better-auth.com/)
 - **Text Editor**: [Tiptap](https://tiptap.dev/)
 
+## Explanations
+
+### React Router v7
+
+這個是個 React 全端框架，提供兩個函數：
+
+1. `loader()`
+2. `action()`
+
+處理來自前端或任何地方的
+[Request](https://developer.mozilla.org/en-US/docs/Web/API/Request)。所以呢，要建立一個 route 有兩步驟：
+
+1. 在某個地方建立一個
+   `blablabla.ts`（如果單純是 api 而沒有 html 檔案的話，例如：`app/routes/auth.ts`） or
+   `blablabla.tsx`（如果你需要在 TypeScript 中撰寫
+   `<HTMX>`，例如：`app/routes/web/layout.tsx`）
+2. 然後在 `app/routes.ts`（記住是檔案）裡面照格式加入
+   `route('/route-in-browser', './your/blablabla.ts')`
+
+接著詳細說說這兩個 functions
+
+1. `loader()` 這個 function 會通常會使用
+   `async function loader() {}`，因為從資料庫取得資料是「非同步的」，也就是你的 function 1.「從資料庫取得資料」跟 2.「返回 Response」不能同步處理，因為你必須等待資料庫回傳資料才有資料，在 Python 中預設就是 async 的沒有問題，但因為 JavaScript 原本是設計給「前端」應用程式，所以通常不會有需要等待問題，而 Python 本身就是伺服器端的語言。
+2. `action()` 是 React Router v7 提供的第二個重要伺服器端函數，與 `loader()`
+   相對應，主要用於處理非 `GET` 請求的 HTTP 方法：
+
+   - POST (add)
+   - PUT (update)
+   - DELETE
+   - PATCH (部分更新)
+
+   回應格式：每個伺服器都需要有 Respond，如果是伺服器通常會是
+   `return Response.json({}, {})`，第一個 param 放入你要回傳的 object，第二個是 Response
+   options 例如 response code。但是 RRv7 也可以直接回傳一個 object
+   `{}`，這樣在前端就不用再次處理 `Date()`（使用 `json` 的話 `Date()` 會變成
+   `string`，在前端需要轉換成 `Date()`）。
+
+### Authentication
+
+- The document `app/routes/auth.ts` is where all auth api functionalities
+  resides. Better-Auth manages all, it exports useful functions like `signin()`
+  or `signout()`. 檔案 `app/routes/auth.ts`
+- 儲存所有身份驗證 api 功能，但我們使用 Better-Auth 處理，他有所有需要用到的 api
+  handles 像是「`signin()`、`signout()`」之類的。
+- In RRv7 (React Router v7), `async loader()` is a function for responding `GET`
+  request, where as `async action()` is going to responde to all other HTTP
+  requests like `POST`(add), `PUT`(update), `DELETE`. For example, you enter the
+  cart page, the browser page sends a `GET` request and you sees all products
+  you want, later when you remove Bueno chocolete from your cart, the second you
+  press, the browser sents a `PUT` request to request a modify in the database.
+- RRv7 中，HTTP methods 分成 `GET` 跟 action (`POST`(add/insert), `PUT`(update),
+  `DELETE`) 兩個 server handle，在頁面第一次渲染（出現）時會呼叫
+  `GET`，之後在例如按鈕、表單，可能會傳送其他的 `POST`, `PUT`, `DELETE`
+  之類的其他 method 到後端，舉例來說，我們進到購物車頁面，第一個 `GET`
+  會回傳所有資料與 Layout，關於你想買的餅乾巧克力，而當你點擊移除不想吃的 Bueno 巧克力時，這個按鈕會傳送一個
+  `PUT` 到伺服器請求（Request）從資料庫刪除 Bueno 巧克力。
+
+#### Authentication Concept
+
+1. 點擊登入按鈕 -> 除送 user and password 到伺服器
+2. 伺服器檢查是否正確
+3. 確認使用者資料並將登入資訊儲存到伺服器端的記憶體或儲存（Better-Auth 直接存到 PostgreSQL）中 Session，同時使用 Session 的 id 建立 Cookie 後放在 Header
+4. 前端收到 response（包含 Cookie）的 Header
+5. 未來只要 Cookie 沒被刪除，伺服器就只要對 Cookie 跟 Session 資料就可以確認身份
+   [Better-Auth Session Cookie](https://www.better-auth.com/docs/concepts/session-management#session-table)
+   [RRv7 Sessions and Cookies Docs](https://reactrouter.com/explanation/sessions-and-cookies)
+   [Remix Cookies Video](https://www.youtube.com/watch?v=ivmumaIZrJM)
+
+身份驗證呢有兩種方式，分為前後端，前端 `authClient.blablabla()`
+這個 function 所可以調用的所有 functions 其實就是發送 requests 到伺服器，在
+`app/routes/papa/auth` 的 `handleSignIn()`
+裡就有用法；但是如果是在 server 端（loader、action）裡面會需要使用
+`auth.api.blablabla()`，前端是無法使用 `auth.api`
+的，因為這個 api 會執行所有真的重要的動作，例如直接在資料庫刪除使用者、直接新增使用者。
+
+### Database
+
+### Drizzle
+
 ---
 
 # Papa CMS
