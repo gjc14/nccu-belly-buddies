@@ -22,6 +22,9 @@ const customizedRoutes = [
 		// Adding customized web routes
 	]),
 
+	// 登入跟註冊放一起就好惹！可以直接在前端切換要調用的 function
+	route('/auth', './routes/web/auth/route.tsx'),
+
 	...prefix('/hello-world', [
 		layout('./routes/web/hello-world/layout.tsx', [
 			index('./routes/web/hello-world/index/route.tsx'),
