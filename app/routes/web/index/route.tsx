@@ -11,6 +11,8 @@ import { createMeta } from '~/lib/utils/seo'
 
 import { Footer } from '../components/footer'
 import { Nav } from '../components/nav'
+import { CategoryFilter } from './components/category-filter'
+import { FoodGrid } from './components/food-grid'
 import { Hero } from './hero'
 
 export const meta: MetaFunction<typeof loader> = ({ data, location }) => {
@@ -51,14 +53,11 @@ export default function Index() {
 	const { meta } = useLoaderData<typeof loader>()
 
 	return (
-		<>
-			<Nav />
-
-			<MainWrapper>
-				<h1 className="visually-hidden">{meta?.seo.metaTitle}</h1>
-				<Hero />
-				<Footer />
-			</MainWrapper>
-		</>
+		<div className="flex-1 flex overflow-hidden">
+			<main className="flex-1 overflow-auto p-4">
+				<CategoryFilter />
+				<FoodGrid />
+			</main>
+		</div>
 	)
 }
