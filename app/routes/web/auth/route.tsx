@@ -10,9 +10,15 @@ export async function loader() {
 
 // If this is going to be a component route instead of an api route, add a default export component
 export default function Auth() {
+	const onLogin = (email: string) => {
+		alert('Login with email: ' + email)
+	}
+
 	return (
 		<div className="w-full h-screen flex items-center justify-center">
-			<LoginForm />
+			<div className="mx-auto max-w-2xl">
+				<LoginForm onLogin={onLogin} />
+			</div>
 		</div>
 	)
 }
