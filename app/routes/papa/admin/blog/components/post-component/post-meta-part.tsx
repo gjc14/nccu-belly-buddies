@@ -15,7 +15,7 @@ import {
 	SelectValue,
 } from '~/components/ui/select'
 import { Textarea } from '~/components/ui/textarea'
-import { type EditorRef } from '~/components/editor/default-tiptap'
+import { type EditorRef } from '~/components/editor'
 import type { PostWithRelations } from '~/lib/db/post.server'
 import { PostStatus } from '~/lib/db/schema'
 import { generateSeoDescription, generateSlug } from '~/lib/utils/seo'
@@ -31,6 +31,25 @@ export const PostMetaPart = ({
 }) => {
 	return (
 		<>
+			<div>
+				<Label htmlFor="image">Image</Label>
+				<Input
+					id="imageUrl"
+					name="imageUrl"
+					type="text"
+					placeholder="Featured image URL?"
+					value={postState.featuredImage || ''}
+					onChange={e => {
+						setPostState(prev => {
+							const newPost = {
+								...prev,
+								featuredImage: e.target.value,
+							}
+							return newPost
+						})
+					}}
+				/>
+			</div>
 			<div>
 				<Label htmlFor="status">Status</Label>
 				<Select
@@ -82,7 +101,10 @@ export const PostMetaPart = ({
 						type="button"
 						variant={'secondary'}
 						onClick={() => {
-							const slug = generateSlug(postState.title)
+							let slug = generateSlug(postState.title)
+							if (!slug) {
+								slug = generateSlug(String(postState.id))
+							}
 
 							setPostState(prev => {
 								const newPost = {
@@ -96,6 +118,7 @@ export const PostMetaPart = ({
 						Generate
 					</Button>
 				</div>
+				{/* 這邊加上 preview */}
 			</div>
 
 			<div>

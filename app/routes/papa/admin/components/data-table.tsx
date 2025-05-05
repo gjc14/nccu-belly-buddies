@@ -1,3 +1,7 @@
+/**
+ * DataTable component for displaying tabular data with sorting, filtering, and pagination.
+ * This is a client side table
+ */
 import { useCallback, useState } from 'react'
 import { useFetcher } from 'react-router'
 
@@ -41,6 +45,13 @@ import {
 	DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu'
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '~/components/ui/select'
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -77,6 +88,11 @@ interface DataTableProps<TData, TValue> {
 	 * ]
 	 */
 	rowGroupStyle?: RowGroupStyle[]
+	/**
+	 * Initial page size for pagination
+	 * @default 10
+	 */
+	initialPageSize?: number
 }
 
 type RowGroupStyle = {
@@ -94,10 +110,15 @@ export function DataTable<TData, TValue>({
 	rowSelection: externalRowSelection,
 	setRowSelection: externalSetRowSelection,
 	rowGroupStyle,
+	initialPageSize = 10,
 }: DataTableProps<TData, TValue>) {
 	const [sorting, setSorting] = useState<SortingState>([])
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+	const [pagination, setPagination] = useState({
+		pageIndex: 0,
+		pageSize: initialPageSize,
+	})
 
 	const [internalRowSelection, setInternalRowSelection] =
 		useState<RowSelectionState>({})
@@ -115,6 +136,7 @@ export function DataTable<TData, TValue>({
 		columns: [...(selectable ? [createSelectColumn<TData>()] : []), ...columns],
 		getCoreRowModel: getCoreRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
+		onPaginationChange: setPagination,
 		onSortingChange: setSorting,
 		getSortedRowModel: getSortedRowModel(),
 		onColumnFiltersChange: setColumnFilters,
@@ -126,7 +148,9 @@ export function DataTable<TData, TValue>({
 			columnFilters,
 			columnVisibility,
 			rowSelection,
+			pagination,
 		},
+		pageCount: Math.ceil(data.length / pagination.pageSize),
 	})
 
 	const getRowClassName = useCallback(
@@ -235,29 +259,64 @@ export function DataTable<TData, TValue>({
 					)}
 				</TableBody>
 			</Table>
-			<div className="flex items-center justify-end space-x-2 pt-4">
+			<div className="flex items-center justify-between space-x-2 pt-4">
 				{selectable && (
 					<div className="flex-1 text-sm text-muted-foreground pl-2.5">
 						{table.getFilteredSelectedRowModel().rows.length} of{' '}
 						{table.getFilteredRowModel().rows.length} row(s) selected.
 					</div>
 				)}
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => table.previousPage()}
-					disabled={!table.getCanPreviousPage()}
-				>
-					Previous
-				</Button>
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => table.nextPage()}
-					disabled={!table.getCanNextPage()}
-				>
-					Next
-				</Button>
+
+				<div className="ml-auto flex items-center space-x-2">
+					<span className="text-xs text-muted-foreground">
+						Page {table.getState().pagination.pageIndex + 1} of{' '}
+						{table.getPageCount()}
+					</span>
+					<Select
+						onValueChange={v =>
+							setPagination({
+								...pagination,
+								pageSize: Number(v),
+							})
+						}
+						defaultValue={pagination.pageSize.toString()}
+					>
+						<SelectTrigger className="w-[90px]">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="10">10</SelectItem>
+							<SelectItem value="20">20</SelectItem>
+							<SelectItem value="25">25</SelectItem>
+							<SelectItem value="50">50</SelectItem>
+							<SelectItem value="100">100</SelectItem>
+							<SelectItem value="200">200</SelectItem>
+							<SelectItem value="250">250</SelectItem>
+							<SelectItem value="500">500</SelectItem>
+							<SelectItem value="750">750</SelectItem>
+							<SelectItem value="1000">1000</SelectItem>
+							<SelectItem value="1500">1500</SelectItem>
+							<SelectItem value="2000">2000</SelectItem>
+						</SelectContent>
+					</Select>
+
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => table.previousPage()}
+						disabled={!table.getCanPreviousPage()}
+					>
+						Previous
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => table.nextPage()}
+						disabled={!table.getCanNextPage()}
+					>
+						Next
+					</Button>
+				</div>
 			</div>
 		</section>
 	)

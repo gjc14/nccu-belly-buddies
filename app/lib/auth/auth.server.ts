@@ -13,10 +13,13 @@ import { db } from '~/lib/db/db.server'
 
 import { emailInstance } from '../utils/email'
 import { ac, admin, user } from './permissions'
-import { sendMagicLink } from './utils'
+import { sendMagicLink, sendVerifyLink } from './utils'
 
-const appName = process.env.APP_NAME ?? 'PAPA'
-const baseURL = process.env.VITE_BASE_URL ?? 'http://localhost:5173'
+const appName = process.env.APP_NAME || 'PAPA'
+const baseURL =
+	process.env.NODE_ENV === 'production'
+		? process.env.VITE_BASE_URL || 'http://localhost:5173'
+		: 'http://localhost:5173'
 
 export const auth = betterAuth({
 	appName,
@@ -27,6 +30,22 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: false,
 	},
+	emailVerification: {
+		sendOnSignUp: true,
+		...(emailInstance
+			? {
+					sendVerificationEmail: async ({ user, url, token }, request) => {
+						await sendVerifyLink({
+							email: user.email,
+							token: token,
+							url: url,
+							emailInstance: emailInstance!,
+						})
+					},
+				}
+			: {}),
+	},
+
 	plugins: [
 		adminPlugin({
 			ac,
@@ -70,6 +89,6 @@ export const auth = betterAuth({
 		}),
 	],
 	advanced: {
-		cookiePrefix: 'papa',
+		cookiePrefix: appName,
 	},
 })
