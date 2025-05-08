@@ -13,3 +13,5 @@
 /.cache
 
 /test
+
+**/tmp/
