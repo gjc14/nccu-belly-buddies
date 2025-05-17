@@ -6,26 +6,13 @@ import {
 	type RouteConfig,
 } from '@react-router/dev/routes'
 
-// import { cv } from './plugins/cv/routes'
+import { webPage } from './routes/web/routes'
+
+// import { cv } from './routes/cv/routes'
 
 const systemRoutes = [
 	layout('./routes/layout.tsx', [
-		layout('./routes/web/layout.tsx', [
-			index('./routes/web/index/route.tsx'),
-			...prefix('/blog', [
-				layout('./routes/web/blog/layout.tsx', [
-					index('./routes/web/blog/index/route.tsx'),
-					route(':postSlug', './routes/web/blog/post-slug/route.tsx'),
-					route(':postSlug/edit', './routes/web/blog/post-slug-edit/route.tsx'),
-					route('/category', './routes/web/blog/category/route.tsx'),
-					route('/tag', './routes/web/blog/tag/route.tsx'),
-					route('/subscribe', './routes/web/blog/subscribe/route.tsx'),
-				]),
-			]),
-			route('/*', './routes/web/$/route.tsx'),
-
-			// Adding web plugins
-		]),
+		...webPage(),
 
 		// Auth
 		route('/api/auth/*', './routes/auth.ts'),
