@@ -38,7 +38,7 @@ const deleteSchema = z.object({
 
 export const action = async ({ request }: ActionFunctionArgs) => {
 	if (request.method !== 'POST' && request.method !== 'DELETE') {
-		throw new Response('Method not allowd', { status: 405 })
+		throw new Response('', { status: 405, statusText: 'Method not allowd' })
 	}
 
 	await validateAdminSession(request)
@@ -49,7 +49,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 	const { data, success } = intentSchema.safeParse(intent)
 
 	if (!success) {
-		throw new Response('Invalid argument', { status: 400 })
+		throw new Response('', { status: 400, statusText: 'Invalid argument' })
 	}
 
 	const formObject = Object.fromEntries(formData)
@@ -71,7 +71,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 						name,
 						description,
 					})
-					return Response.json({
+					return {
 						msg: 'New category created',
 						data: { ...category, originalId: id },
 						options: {
@@ -79,18 +79,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 						},
 					} satisfies ConventionalActionResponse<
 						Category & { originalId: number }
-					>)
+					>
 				} else if (request.method === 'DELETE') {
 					const { id } = deleteSchema.parse(formObject)
 					const { category } = await deleteCategory(id)
 					if (!category) {
-						return Response.json({
+						return {
 							err: 'Category not found',
-						} satisfies ConventionalActionResponse)
+						} satisfies ConventionalActionResponse
 					}
-					return Response.json({
+					return {
 						msg: deleteMesage(category.name),
-					} satisfies ConventionalActionResponse)
+					} satisfies ConventionalActionResponse
 				}
 			} catch (error) {
 				return handleError(error, request, {
@@ -113,7 +113,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 						name,
 						description,
 					})
-					return Response.json({
+					return {
 						msg: 'New subcategory created',
 						data: { ...subcategory, originalId: id },
 						options: {
@@ -121,18 +121,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 						},
 					} satisfies ConventionalActionResponse<
 						SubCategory & { originalId: number }
-					>)
+					>
 				} else if (request.method === 'DELETE') {
 					const { id } = deleteSchema.parse(formObject)
 					const { subcategory } = await deleteSubcategory(id)
 					if (!subcategory) {
-						return Response.json({
+						return {
 							err: 'Subcategory not found',
-						} satisfies ConventionalActionResponse)
+						} satisfies ConventionalActionResponse
 					}
-					return Response.json({
+					return {
 						msg: deleteMesage(subcategory.name),
-					} satisfies ConventionalActionResponse)
+					} satisfies ConventionalActionResponse
 				}
 			} catch (error) {
 				return handleError(error, request, {
@@ -150,24 +150,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 				if (request.method === 'POST') {
 					const { id, name, description } = taxonomySchema.parse(formObject)
 					const { tag } = await createTag({ name, description })
-					return Response.json({
+					return {
 						msg: 'New tag created',
 						data: { ...tag, originalId: id },
 						options: {
 							preventAlert: true,
 						},
-					} satisfies ConventionalActionResponse<Tag & { originalId: number }>)
+					} satisfies ConventionalActionResponse<Tag & { originalId: number }>
 				} else if (request.method === 'DELETE') {
 					const { id } = deleteSchema.parse(formObject)
 					const { tag } = await deleteTag(id)
 					if (!tag) {
-						return Response.json({
+						return {
 							err: 'Tag not found',
-						} satisfies ConventionalActionResponse)
+						} satisfies ConventionalActionResponse
 					}
-					return Response.json({
+					return {
 						msg: deleteMesage(tag.name),
-					} satisfies ConventionalActionResponse)
+					} satisfies ConventionalActionResponse
 				}
 			} catch (error) {
 				return handleError(error, request, {
@@ -177,7 +177,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 		}
 
 		default: {
-			throw new Response('Invalid argument', { status: 400 })
+			throw new Response('', { status: 400, statusText: 'Invalid argument' })
 		}
 	}
 }

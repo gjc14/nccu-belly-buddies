@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import type { UserWithRole } from 'better-auth/plugins'
 import { Building, Command, LifeBuoy, Send } from 'lucide-react'
 
 import {
@@ -9,6 +8,7 @@ import {
 	SidebarFooter,
 	SidebarHeader,
 } from '~/components/ui/sidebar'
+import type { Session } from '~/lib/auth/auth.server'
 import { NavMain } from '~/routes/papa/admin/components/nav/nav-main'
 import { NavPlugins } from '~/routes/papa/admin/components/nav/nav-plugins'
 import {
@@ -22,7 +22,7 @@ import { ServiceSwicher, type ServiceSwicherProps } from './service-swicher'
 
 const services: ServiceSwicherProps['services'] = [
 	{
-		name: 'Papa CMS',
+		name: 'Papa',
 		logo: () => <Command className="size-4" />,
 		plan: 'Startup',
 		url: '/admin',
@@ -77,7 +77,7 @@ const SecondaryNavItems: NavSecondaryItem[] = [
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
 	pluginRoutes: PapaAdminMenuItem[]
-	user: UserWithRole
+	user: Session['user']
 }
 
 export function AdminSidebar({

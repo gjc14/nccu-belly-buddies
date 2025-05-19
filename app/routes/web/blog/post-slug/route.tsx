@@ -32,7 +32,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 	const meta = seo ? createMeta(seo, new URL(request.url)) : null
 
 	if (!params.postSlug) {
-		throw new Response('Post not found', { status: 404 })
+		throw new Response('', { status: 404, statusText: 'Post not found' })
 	}
 
 	const { searchParams } = new URL(request.url)
@@ -45,12 +45,12 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 	try {
 		const { post, prevPost, nextPost } = await getPostBySlug(params.postSlug)
 		if (!post || (!preview && post.status !== 'PUBLISHED')) {
-			throw new Response('Post not found', { status: 404 })
+			throw new Response('', { status: 404, statusText: 'Post not found' })
 		}
 		return { post, prevPost, nextPost, meta }
 	} catch (error) {
 		console.error(error)
-		throw new Response('Post not found', { status: 404 })
+		throw new Response('', { status: 404, statusText: 'Post not found' })
 	}
 }
 
@@ -62,7 +62,8 @@ export const clientLoader = async ({
 	params,
 }: ClientLoaderFunctionArgs) => {
 	const postSlug = params.postSlug
-	if (!postSlug) throw new Response('Post not found', { status: 404 })
+	if (!postSlug)
+		throw new Response('', { status: 404, statusText: 'Post not found' })
 
 	const cachedPost = cache[postSlug]
 
@@ -89,7 +90,7 @@ export default function BlogPost() {
 	}, [post])
 
 	return (
-		<div className="w-full max-w-prose min-h-screen px-5 mt-32 text-pretty xl:px-0">
+		<div className="w-full max-w-prose min-h-svh px-5 mt-32 text-pretty xl:px-0">
 			<MainPost post={post} />
 
 			<PostFooter post={post} next={nextPost} prev={prevPost} />
