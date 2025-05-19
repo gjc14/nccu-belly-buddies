@@ -11,6 +11,18 @@ import { blogRoute, indexRoute, splatRoute } from './papa.routes'
 // Configure your customized routes here
 const customizedRoutes = [
 	// Add your customized routes here
+	indexRoute(),
+
+	route('/auth', './routes/web/auth/route.tsx'),
+
+	...prefix('/api', [
+		route('group/:id', './routes/web/api/group.ts'),
+		route('membership/:id', './routes/web/api/membership.ts'),
+		route('rating/:id', './routes/web/api/rating.ts'),
+		route('recommendation/:id', './routes/web/api/recommendation.ts'),
+		route('report/:id', './routes/web/api/report.ts'),
+		route('restaurant/:id', './routes/web/api/restaurant.ts'),
+	]),
 ] satisfies RouteConfig
 
 const systemRoutes = [
