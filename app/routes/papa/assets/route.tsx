@@ -8,7 +8,7 @@ import { db } from '~/lib/db/db.server'
 import { validateAdminSession } from '../auth/utils'
 import { presignedUrlRes } from './helpers'
 
-// Usage: papa.com/assets/{assetId}
+// Usage: papa.cloud/assets/{assetId}
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 	const assetId = params.assetId
 
@@ -23,13 +23,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 		where: (t, { eq, and }) => and(eq(t.id, assetId)),
 	})
 
-	if (!metadata) throw new Response('Not Found', { status: 404 })
+	if (!metadata)
+		throw new Response('', { status: 404, statusText: 'Not Found' })
 
 	if (!metadata.public) {
-		// check ACL (access control) here
+		// TODO: check ACL (access control) here
 		const session = await validateAdminSession(request)
 		if (metadata.ownerId !== session.user.id) {
-			throw new Response('Unauthorized', { status: 403 })
+			throw new Response('', { status: 401, statusText: 'Unauthorized' })
 		}
 	}
 

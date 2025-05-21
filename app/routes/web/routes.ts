@@ -6,33 +6,52 @@ import {
 	type RouteConfig,
 } from '@react-router/dev/routes'
 
+import { blogRoute, indexRoute, splatRoute } from './papa.routes'
+
+// Configure your customized routes here
 const customizedRoutes = [
-	layout('./routes/web/layout.tsx', [
-		index('./routes/web/index/route.tsx'),
-		route('/blog', './routes/web/blog/layout.tsx', [
-			index('./routes/web/blog/index/route.tsx'),
-			route(':postSlug', './routes/web/blog/post-slug/route.tsx'),
-			route(':postSlug/edit', './routes/web/blog/post-slug-edit/route.tsx'),
-			route('category', './routes/web/blog/category/route.tsx'),
-			route('tag', './routes/web/blog/tag/route.tsx'),
-			route('subscribe', './routes/web/blog/subscribe/route.tsx'),
-		]),
-		route('/*', './routes/web/$/route.tsx'),
+	// Add your customized routes here
+	indexRoute(),
 
-		// Adding customized web routes
-	]),
-
-	// 登入跟註冊放一起就好惹！可以直接在前端切換要調用的 function
 	route('/auth', './routes/web/auth/route.tsx'),
 
-	...prefix('/hello-world', [
-		layout('./routes/web/hello-world/layout.tsx', [
-			index('./routes/web/hello-world/index/route.tsx'),
-			route(':whateverParam', './routes/web/hello-world/param/route.tsx'),
-		]),
+	...prefix('/api', [
+		route('group/:id', './routes/web/api/group.ts'),
+		route('membership/:id', './routes/web/api/membership.ts'),
+		route('rating/:id', './routes/web/api/rating.ts'),
+		route('recommendation/:id', './routes/web/api/recommendation.ts'),
+		route('report/:id', './routes/web/api/report.ts'),
+		route('restaurant/:id', './routes/web/api/restaurant.ts'),
+	]),
+] satisfies RouteConfig
+
+const systemRoutes = [
+	layout('./routes/web/layout.tsx', [
+		...(customizedRoutes.length === 0
+			? [
+					indexRoute(),
+					blogRoute(),
+					splatRoute(),
+					...prefix('/hello-world', [
+						layout('./routes/web/hello-world/layout.tsx', [
+							index('./routes/web/hello-world/index/route.tsx'),
+							route(
+								':whateverParam',
+								'./routes/web/hello-world/param/route.tsx',
+							),
+						]),
+						// This is the same as the above, but using the `route` function
+						// route('/hello-world/hello', './routes/web/hello-world/layout.tsx', [
+						// 	index('./routes/web/hello-world/index/route.tsx'),
+						// 	route(':whateverParam', './routes/web/hello-world/param/route.tsx'),
+						// ])
+					]),
+				]
+			: // Adding customized web routes
+				customizedRoutes),
 	]),
 ] satisfies RouteConfig
 
 export const webPage = () => {
-	return [...customizedRoutes]
+	return [...systemRoutes]
 }

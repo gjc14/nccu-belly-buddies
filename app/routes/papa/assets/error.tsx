@@ -1,6 +1,6 @@
 import { useLoaderData, type LoaderFunctionArgs } from 'react-router'
 
-// Usage: papacms.com/assets/my-file-key?visibility=public
+// Usage: papa.cloud/assets/my-file-key?visibility=public
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 	const { searchParams } = new URL(request.url)
 
@@ -14,7 +14,7 @@ export default function AssetsError() {
 	const { status, statusText } = useLoaderData<typeof loader>()
 
 	return (
-		<div className="h-screen w-screen grow flex flex-col items-center justify-center">
+		<div className="h-svh w-screen grow flex flex-col items-center justify-center">
 			<h1>Asset Error</h1>
 			<p>
 				{status || 'Unknown status code'} | {statusText || 'Unknown error'}

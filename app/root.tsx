@@ -110,7 +110,7 @@ export default function App() {
 				),
 			)
 
-			// Convention: actions return Response.json({ msg, data? } | { err, data?}) refer to README.md or ./app/libs/utils.tsx
+			// Convention: actions return { msg, data? } | { err, data? } refer to README.md or ./app/libs/utils.tsx
 			const actionResponses = fetchers.filter(fetcher => {
 				return (
 					fetcher.state === 'loading' &&
@@ -202,51 +202,39 @@ export default function App() {
 export function ErrorBoundary() {
 	const error = useRouteError()
 
-	// throw new Response()
+	// Route throw new Response (404, etc.)
 	if (isRouteErrorResponse(error)) {
-		console.error('Error response:', error.data)
+		console.error('Route Error Response:', error)
+
 		return (
-			<main className="w-screen h-screen flex flex-col items-center justify-center">
-				<div className="flex flex-1 flex-col justify-center text-primary">
-					<h1 className="text-center font-mono">{error.status}</h1>
-					<a
-						className="text-center inline-block underline"
-						href={`https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/${error.status}`}
-					>
-						why this error?
-					</a>
-				</div>
+			<main className="w-screen h-svh flex flex-col items-center justify-center">
+				<p>Root Error Boundary.</p>
+				<p>
+					Server Response <strong>{error.status}</strong>
+				</p>
 			</main>
 		)
 	} else if (error instanceof Error) {
 		// throw new Error('message')
+		console.error('Error:', error)
+
 		return (
-			<main className="w-screen h-screen flex flex-col items-center justify-center">
-				<div className="flex flex-1 flex-col justify-center text-primary">
-					<h1 className="text-center font-mono">500</h1>
-					<p>Internal Server Error</p>
-					<a
-						href="mailto:your@ema.il"
-						className="text-center inline-block underline"
-					>
-						Report this error
-					</a>
-				</div>
+			<main className="w-screen h-svh flex flex-col items-center justify-center">
+				<p>Root Error Boundary.</p>
+				<p>
+					Error <strong>{error.message}</strong>
+				</p>
 			</main>
 		)
 	}
 
+	console.error('Unknown Error:', error)
+
 	return (
-		<main className="w-screen h-screen flex flex-col items-center justify-center">
-			<div className="flex flex-1 flex-col justify-center text-primary">
-				<h1 className="text-center font-mono">Unknown Error</h1>
-				<a
-					href="mailto:your@ema.il"
-					className="text-center inline-block underline"
-				>
-					Report this error
-				</a>
-			</div>
+		// Unknown error
+		<main className="w-screen h-svh flex flex-col items-center justify-center">
+			<p>Root Error Boundary.</p>
+			<p>Unknown Error</p>
 		</main>
 	)
 }

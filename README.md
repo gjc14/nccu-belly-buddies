@@ -221,11 +221,11 @@ export const meta: MetaFunction<typeof loader> = ({ data, location }) => {
 
 ---
 
-# Papa CMS
+# Papa
 
 <!-- prettier-ignore -->
 > [!NOTE]
-> Welcome to PapaCMS, this is an open-source project for building modern web with React and TypeScript.
+> Welcome to Papa, this is an open-source project for building modern web with React and TypeScript.
 
 ## Tech Stack
 
@@ -253,7 +253,7 @@ export const meta: MetaFunction<typeof loader> = ({ data, location }) => {
 2. Get a PostgreSQL database, either host locally or use
    [Neon](https://neon.tech/), which provides 0.5G storage for up to 10
    projects. 512MB is capable of more than 17,000 of
-   [What is PapaCMS (30kB)](https://papacms.vercel.app/blog/what-is-papa) post.
+   [What is Papa (30kB)](https://papacloud.vercel.app/blog/what-is-papa) post.
 3. Have a [Resend](https://resend.com/) account to send email. Every Resend
    account has a [free 3,000 emails/mo quota](https://resend.com/pricing).
 4. Setup an object storage either in
@@ -263,7 +263,7 @@ export const meta: MetaFunction<typeof loader> = ({ data, location }) => {
    [Cloudflare Turnstile](https://www.cloudflare.com/application-services/products/turnstile/),
    [reCAPTCHA v3](https://www.google.com/recaptcha/about/) (coming soon) or
    [hCaptcha](https://www.hcaptcha.com/) (coming soon) to secure your form.
-6. Chose where to deploy your PapaCMS application.
+6. Chose where to deploy your Papa application.
 
 ### Set up [Cloudflare R2](https://www.cloudflare.com/developer-platform/products/r2/)
 
@@ -299,26 +299,41 @@ cd papa && mv .env.example .env
 > [!WARNING]
 > VITE will expose any environment variable with _VITE_\_ prefix, please use it carefully.
 
-1. `DATABASE_URL`: We are using PostgreSQL.
-2. (optional) Set `TURNSTILE_SITE_KEY`: This key is used to
-   [get Turnstile token](https://developers.cloudflare.com/turnstile/get-started/)
-   in client, if you use
-   [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/) as
-   captcha, so should be exposed in the frontend with _VITE_\_ prefix.
-3. (optional) `TURNSTILE_SECRET_KEY`: Used to
-   [verify Turnstile token](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/)
-   get in the frontend in the backend
-4. `AUTH_SECRET`: Use
-   `node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"` to
-   generate a random secret with node.
-5. `AUTH_EMAIL`: The email address sending authentication emails.
-6. `VITE_BASE_URL`: This is the domain where you're hosting this app. In dev
-   mode, probably `http://localhost:5173`. In production environment, please use
-   where your app is. E.g. `https://papa.delicioso`.
-7. `APP_NAME`: What you call your app.
-8. `RESEND_API_KEY`: Send emails via Resend.
-9. (optional) `GOOGLE_GENERATIVE_AI_API_KEY`, `OPENAI_API_KEY`,
-   `ANTHROPIC_API_KEY`: For use of Generative AI in `/admin/api/ai`
+1.  `DATABASE_URL`: We connect to PostgreSQL using node-postgres (pg), so both
+    direct and pooled connections are supported.
+
+    - Direct connections provide a one-to-one connection from your app to the
+      database. They are ideal for long-lived environments like VMs or
+      containers.
+    - Pooled connections (e.g., via PgBouncer in transaction or session pooling
+      mode) allow sharing a limited number of database connections across many
+      stateless requests. This is especially important when running on
+      serverless platforms, where each request may create a new database
+      connection.
+
+    - **When using stateless/serverless architecture, we recommend using pooled
+      connections to avoid hitting connection limits and to ensure
+      scalability.**
+
+2.  (optional) Set `TURNSTILE_SITE_KEY`: This key is used to
+    [get Turnstile token](https://developers.cloudflare.com/turnstile/get-started/)
+    in client, if you use
+    [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/) as
+    captcha, so should be exposed in the frontend with _VITE_\_ prefix.
+3.  (optional) `TURNSTILE_SECRET_KEY`: Used to
+    [verify Turnstile token](https://developers.cloudflare.com/turnstile/get-started/server-side-validation/)
+    get in the frontend in the backend
+4.  `AUTH_SECRET`: Use
+    `node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"`
+    to generate a random secret with node.
+5.  `AUTH_EMAIL`: The email address sending authentication emails.
+6.  `VITE_BASE_URL`: This is the domain where you're hosting this app. In dev
+    mode, probably `http://localhost:5173`. In production environment, please
+    use where your app is. E.g. `https://papa.delicioso`.
+7.  `APP_NAME`: What you call your app.
+8.  `RESEND_API_KEY`: Send emails via Resend.
+9.  (optional) `GOOGLE_GENERATIVE_AI_API_KEY`, `OPENAI_API_KEY`,
+    `ANTHROPIC_API_KEY`: For use of Generative AI in `/admin/api/ai`
 10. `BUCKET_NAME`,`OBJECT_STORAGE_ACCESS_KEY_ID`,
     `OBJECT_STORAGE_SECRET_ACCESS_KEY`, `OBJECT_STORAGE_ACCOUNT_ID`: Where you
     save your objects, accept S3 compatible services. Using in route
@@ -397,14 +412,14 @@ type ReturnData = {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
 	if (a) {
-		return Response.json({
+		return {
 			msg: `Welcome to PAPA!`,
 			data: { name: newName },
-		} satisfies ConventionalActionResponse<ReturnData>)
+		} satisfies ConventionalActionResponse<ReturnData>
 	} else {
-		return Response.json({
+		return {
 			err: 'Method not allowed',
-		} satisfies ConventionalActionResponse)
+		} satisfies ConventionalActionResponse
 	}
 }
 

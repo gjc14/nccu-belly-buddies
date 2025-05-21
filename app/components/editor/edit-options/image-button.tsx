@@ -3,7 +3,7 @@ import { useFetcher } from 'react-router'
 
 import { PopoverClose } from '@radix-ui/react-popover'
 import { Editor } from '@tiptap/react'
-import { CloudAlert, Image, Loader, Loader2 } from 'lucide-react'
+import { CloudAlert, Image, Loader } from 'lucide-react'
 
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -92,7 +92,7 @@ export const ImageButton = ({ editor }: { editor: Editor }) => {
 
 					{!fileLoadedRef.current || isLoading ? (
 						<Button disabled>
-							<Loader className="animate-spin" size={20} />
+							<Loader className="animate-spin" /> Select from Gallery
 						</Button>
 					) : hasObjectStorage ? (
 						<FileGrid
@@ -125,7 +125,7 @@ export const ImageButton = ({ editor }: { editor: Editor }) => {
 							<Input
 								ref={urlInputRef}
 								id="url"
-								placeholder="https://papacms.com/logo.svg"
+								placeholder="https://papa.cloud/logo.png"
 								className="col-span-2 h-8"
 							/>
 						</div>
