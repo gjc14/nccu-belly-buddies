@@ -12,6 +12,7 @@ import { user } from './auth'
 import { timestampAttributes } from './helpers'
 import { restaurant } from './restaurant'
 
+// ✅ 群組資料表
 export const group = pgTable('group', {
 	id: uuid('group_id').defaultRandom().primaryKey(),
 	name: text('group_name').notNull(),
@@ -34,6 +35,7 @@ export const group = pgTable('group', {
 	...timestampAttributes,
 })
 
+// ✅ 群組成員關聯表（不可刪）
 export const groupMember = pgTable(
 	'group_member',
 	{
