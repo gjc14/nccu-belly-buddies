@@ -67,7 +67,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 					description: groupFormData.description,
 					restaurantID: groupFormData.restaurantID,
 					status: groupFormData.status,
-					proposedBudget: groupFormData.proposedBudget,
+					proposedBudget: Number(groupFormData.proposedBudget),
 					foodPreference: groupFormData.foodPreference,
 					numofPeople: Number(groupFormData.numofPeople),
 					startTime: new Date(groupFormData.startTime),

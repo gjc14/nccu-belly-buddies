@@ -1,6 +1,6 @@
 import { json, redirect } from '@remix-run/node'
 import { db } from '~/lib/db/db.server'
-import { rating } from '~/lib/db/schema/rating'
+import { comment } from '~/lib/db/schema/comment'
 import { eq, and } from 'drizzle-orm'
 import { auth } from '~/lib/auth/auth.server'
 
@@ -11,24 +11,24 @@ export async function action({ request }: { request: Request }) {
 	const user = session.user
 	const formData = await request.formData()
 	const restaurantId = formData.get('restaurantId')?.toString()
-	const score = Number(formData.get('score'))
+	const content = formData.get('content')?.toString()
 
-	// 只能評一次
-	const exists = await db.query.rating.findFirst({
-		where: (r, { eq, and }) => and(
-			eq(r.restaurantId, restaurantId),
-			eq(r.userId, user.id)
+	// 只能留言一次
+	const exists = await db.query.comment.findFirst({
+		where: (c, { eq, and }) => and(
+			eq(c.restaurantId, restaurantId),
+			eq(c.userId, user.id)
 		),
 	})
 	if (exists) {
-		return json({ error: '你已經評分過了' }, { status: 400 })
+		return json({ error: '你已經留言過了' }, { status: 400 })
 	}
 
-	const result = await db.insert(rating).values({
+	const result = await db.insert(comment).values({
 		userId: user.id,
 		restaurantId,
-		score,
+		content,
 	}).returning()
 
-	return json({ msg: '評分成功', rating: result[0] })
+	return json({ msg: '留言成功', comment: result[0] })
 }
