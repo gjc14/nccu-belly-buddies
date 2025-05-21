@@ -1,102 +1,144 @@
-/** 群組
- * 網址：http://localhost:5173/api/group/123
- * /api/group 是固定的，後面的 123 是變數，從 params.id 取得這個變數，請見 loader/action 的使用方法
- * 我有在 app/routes/web/routes.ts 設定 /:id
- * （「:id」表示變數名稱是 id 的變數，可以從 params.id 取得，也可以是「:groupId」，那 params 就要用 params.groupId 取得）
- */
-
-import { redirect } from 'react-router'
-
-import { eq } from 'drizzle-orm'
-
-import { auth } from '~/lib/auth/auth.server'
+import { redirect, json } from '@remix-run/node'
 import { db } from '~/lib/db/db.server'
-import * as schema from '~/lib/db/schema'
-import type { ConventionalActionResponse } from '~/lib/utils'
+import { auth } from '~/lib/auth/auth.server'
+import { group } from '~/lib/db/schema/group'
+import { restaurant } from '~/lib/db/schema/restaurant'
+import { groupMember } from '~/lib/db/schema/group'
+import { eq, and, sql } from 'drizzle-orm'
 
-import type { Route } from './+types/group'
+// 群組 CRUD 操作
+export async function action({ request, params }: { request: Request; params: { id: string } }) {
+  const session = await auth.api.getSession(request)
+  if (!session) throw redirect('/auth')
 
-// action 負責處理 POST、PUT、DELETE request
-export async function action({ request, params }: Route.ActionArgs) {
-	// 如果沒有登入，重新導向登入頁面
-	const session = await auth.api.getSession(request)
-	if (!session) throw redirect('/auth')
+  const user = session.user
+  const groupId = params.id
 
-	const groupId = params.id // 我有在 app/routes/web/routes.ts 設定 /:id
-	const user = session.user
-	// 以下可以開始處理 user 與 group id
-	// ...
+  const formData = await request.formData()
+  const name = formData.get('name')?.toString()
+  const description = formData.get('description')?.toString()
+  const restaurantID = formData.get('restaurantID')?.toString()
+  const startTime = formData.get('startTime')?.toString()
+  const foodPreference = formData.get('foodPreference')?.toString()
+  const numOfPeople = Number(formData.get('numOfPeople'))
+  const proposedBudget = Number(formData.get('proposedBudget'))
 
-	switch (request.method) {
-		case 'POST':
-			// 處理 POST 請求，通常是用來創建新的資源
-			// 例如：
-			const newGroup = await db.insert(schema.group).values({
-				name: '新群組',
-				description: '這是一個新的群組',
-				creatorId: user.id,
-				// ...其他欄位
-			})
+  switch (request.method) {
+    case 'POST': {
+      if (!name || !numOfPeople || !proposedBudget) {
+        return json({ error: '請填寫必填欄位' }, { status: 400 })
+      }
 
-			return {
-				msg: '群組已創建',
-				data: newGroup,
-			} satisfies ConventionalActionResponse
-		case 'PUT':
-			// 處理 PUT 請求，通常是用來更新現有的資源
-			// 例如：
-			const updatedGroup = await db
-				.update(schema.group)
-				.set({
-					name: '更新後的群組名稱',
-					description: '這是更新後的群組描述',
-					// ...其他欄位
-				})
-				.where(eq(schema.group.id, groupId)) // 記得使用 where，不然所有資料都會變成 passed in value
-			// .where 的使用方式是：從 schemas 中找到 group 的 schema，然後 group table(schema) 的 id 要等於傳入的 groupId
+      const createdGroup = await db.insert(group).values({
+        name,
+        description,
+        restaurantID,
+        startTime: startTime ? new Date(startTime) : undefined,
+        foodPreference,
+        numofPeople: numOfPeople,
+        proposedBudget: proposedBudget.toString(),
+        creatorId: user.id,
+        status: 'active',
+      }).returning()
 
-			return {
-				msg: '群組已更新',
-				data: updatedGroup,
-			} satisfies ConventionalActionResponse
-		case 'DELETE':
-			// 處理 DELETE 請求，通常是用來刪除資源
-			// 例如：
-			const deletedGroup = await db
-				.delete(schema.group)
-				.where(eq(schema.group.id, groupId)) // 記得使用 where，不然所有資料都會被刪掉
+      await db.insert(groupMember).values({
+        groupId: createdGroup[0].id,
+        userId: user.id,
+        userName: user.name,
+        role: 'Admin',
+      })
 
-			return {
-				msg: '群組已刪除',
-				data: deletedGroup,
-			} satisfies ConventionalActionResponse
-		default:
-			throw new Response('', {
-				status: 405,
-				statusText: 'Method Not Allowed',
-			})
-	}
+      return json({ msg: '群組已建立，管理員已加入', group: createdGroup[0] })
+    }
+
+    case 'PUT': {
+      const existingGroup = await db.query.group.findFirst({
+        where: (g, { eq }) => eq(g.id, groupId),
+      })
+
+      if (!existingGroup) return json({ error: '找不到群組' }, { status: 404 })
+      if (existingGroup.creatorId !== user.id) return json({ error: '非創建者無法修改' }, { status: 403 })
+      if (existingGroup.status === 'completed') return json({ error: '群組已完成，無法修改' }, { status: 403 })
+
+      await db.update(group).set({
+        name,
+        description,
+        restaurantID,
+        startTime: startTime ? new Date(startTime) : undefined,
+        foodPreference,
+        numofPeople,
+        proposedBudget: proposedBudget.toString(),
+      }).where(eq(group.id, groupId))
+
+      return json({ msg: '群組已更新' })
+    }
+
+    case 'DELETE': {
+      const currentAdmin = await db
+        .select({ role: groupMember.role })
+        .from(groupMember)
+        .where(and(eq(groupMember.userId, user.id), eq(groupMember.groupId, groupId)))
+
+      if (currentAdmin[0]?.role === 'Admin') {
+        const action = formData.get('action')?.toString()
+        const newAdminId = formData.get('newAdminId')?.toString()
+
+        if (action === 'delete') {
+          await db.delete(group).where(eq(group.id, groupId))
+          await db.delete(groupMember).where(eq(groupMember.groupId, groupId))
+          return json({ msg: '群組已刪除' })
+        } else if (action === 'assign') {
+          let earliestMember: { userId: string }[] = []
+
+          if (newAdminId) {
+            await db.update(groupMember)
+              .set({ role: 'Admin' })
+              .where(and(eq(groupMember.userId, newAdminId), eq(groupMember.groupId, groupId)))
+          } else {
+            earliestMember = await db.select({ userId: groupMember.userId })
+              .from(groupMember)
+              .where(eq(groupMember.groupId, groupId))
+              .orderBy(sql`created_at ASC`).limit(1)
+
+            if (earliestMember.length > 0) {
+              await db.update(groupMember)
+                .set({ role: 'Admin' })
+                .where(and(eq(groupMember.userId, earliestMember[0].userId), eq(groupMember.groupId, groupId)))
+            }
+          }
+
+          await db.delete(groupMember)
+            .where(and(eq(groupMember.userId, user.id), eq(groupMember.groupId, groupId)))
+
+          return json({ msg: '管理員已更新', data: newAdminId || earliestMember[0]?.userId })
+        }
+      }
+
+      return json({ error: '非管理員無法刪除或轉讓群組' }, { status: 403 })
+    }
+
+    default:
+      throw new Response('', { status: 405 })
+  }
 }
 
-// Loader 負責處理 GET request
-export async function loader({ request, params }: Route.LoaderArgs) {
-	// 如果沒有登入，重新導向登入頁面
-	const session = await auth.api.getSession(request)
-	if (!session) throw redirect('/auth')
+// 查詢群組資料（含每人預算與所有餐廳選單）
+export async function loader({ request, params }: { request: Request; params: { id: string } }) {
+  const session = await auth.api.getSession(request)
+  if (!session) throw redirect('/auth')
 
-	const groupId = params.id // 我有在 app/routes/web/routes.ts 設定 /:id
-	const user = session.user
-	// 以下可以開始處理 user 與 group id
-	// ...
+  const groupId = params.id
+  const data = await db.query.group.findFirst({
+    where: (g, { eq }) => eq(g.id, groupId),
+  })
 
-	const group = await db.query.group.findFirst({
-		where: (groupTable, { eq }) => eq(groupTable.id, groupId),
-	})
+  if (!data) return json({ error: '找不到群組' }, { status: 404 })
 
-	// 返回資料給前端第一次頁面顯示所需要的內容，例如用 groupId 取得 group
-	return {
-		api: '群組',
-		id: groupId,
-		group: group,
-	}
+  const restaurants = await db.select().from(restaurant)
+  const perPersonCost =
+    data.numofPeople && data.proposedBudget
+      ? Number(data.proposedBudget) / data.numofPeople
+      : null
+
+  return json({ group: data, perPersonCost, restaurants })
 }
