@@ -17,7 +17,7 @@ export const group = pgTable('group', {
 	status: text('status').notNull().default('active'),
 	proposedBudget: text('proposed_budget'),
 	foodPreference: text('food_preference'),
-	numofPeople: integer('num_of_people'),
+	numofPeople: integer('num_of_people').notNull(),
 	startTime: timestamp('start_time'),
 	spokenLanguage: text('spoken_language'),
 
@@ -30,6 +30,9 @@ export const groupMember = pgTable(
 		groupId: text('group_id')
 			.notNull()
 			.references(() => group.id, { onDelete: 'cascade' }),
+		groupName: text('group_name')
+			.notNull()
+			.references(() => group.name),
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),

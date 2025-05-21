@@ -13,7 +13,6 @@ import { auth } from '~/lib/auth/auth.server'
 import { db } from '~/lib/db/db.server'
 import * as schema from '~/lib/db/schema'
 import type { ConventionalActionResponse } from '~/lib/utils'
-
 import type { Route } from './+types/group'
 
 // action 負責處理 POST、PUT、DELETE request
@@ -31,15 +30,22 @@ export async function action({ request, params }: Route.ActionArgs) {
 		case 'POST':
 			// 處理 POST 請求，通常是用來創建新的資源
 			// 例如：
-			const newGroup = await db.insert(schema.group).values({
+			const postGroup = await db.insert(schema.group).values({
 				name: '新群組',
 				description: '這是一個新的群組',
 				creatorId: user.id,
+				numofPeople:10
 				// ...其他欄位
-			})
+			  }).returning({ id: schema.group.id, name: schema.group.name });
+			  if (!postGroup[0]) {
+				throw new Error('新增群組失敗');
+			  }
+			  
+			const newGroup = postGroup[0]; 
 			
 			const addAdmin = await db.insert(schema.groupMember).values({
-				groupId: groupId,
+				groupId: newGroup.id,
+				groupName: newGroup.name,
 				userId: user.id,
 				userName: user.name,
 				role:'Admin'
@@ -96,9 +102,9 @@ export async function action({ request, params }: Route.ActionArgs) {
     		if (currentAdmin[0]?.role === 'Admin') {
        		 // Check if the admin has chosen to delete the group
         	const formData = await request.formData();
-		const action = formData.get('action'); // 'delete' or 'assign'
-		const newAdminId = formData.get('newAdminId'); // Optional new admin ID
-		let earliestMember: { userId: string }[] = []; // Declare earliestMember 
+			const action = formData.get('action'); // 'delete' or 'assign'
+			const newAdminId = formData.get('newAdminId'); // Optional new admin ID
+			let earliestMember: { userId: string }[] = []; // Declare earliestMember 
 
 		if (action === 'delete') {
 			// Delete the group
@@ -127,7 +133,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 					.select({ userId: schema.groupMember.userId })
 					.from(schema.groupMember)
 					.where(eq(schema.groupMember.groupId, groupId))
-					.orderBy(sql`${schema.groupMember.timestampAttributes} ASC`)
+					.orderBy(sql`${schema.groupMember.createdAt} ASC`)
 					.limit(1);
 
 				if (earliestMember.length > 0) {
@@ -182,10 +188,16 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		where: (groupTable, { eq }) => eq(groupTable.id, groupId),
 	})
 
+	// 取得所有狀態為 active 的群組
+	const activeGroups = await db.query.group.findMany({
+		where: (groupTable, { eq }) => eq(groupTable.status, 'active'),
+	})
+
 	// 返回資料給前端第一次頁面顯示所需要的內容，例如用 groupId 取得 group
 	return {
 		api: '群組',
 		id: groupId,
 		group: group,
+		activeGroups: activeGroups,
 	}
 }
