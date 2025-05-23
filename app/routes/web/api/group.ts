@@ -243,7 +243,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	// 以下可以開始處理 user 與 group id
 	// ...
 
-	if (groupId !== '') {
+	// 如果是 route: /api/group/all，則 groupId 會是 all
+	if (groupId === 'all') {
 		// 回傳所有 group
 
 		// 取得所有狀態為 active 的群組
@@ -251,6 +252,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			where: (groupTable, { eq }) => eq(groupTable.status, 'active'),
 		})
 
+		console.log('activeGroups', activeGroups)
 		// 返回資料給前端第一次頁面顯示所需要的內容，例如用 groupId 取得 group
 		return {
 			activeGroups: activeGroups,
@@ -260,6 +262,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		const group = await db.query.group.findFirst({
 			where: (groupTable, { eq }) => eq(groupTable.id, groupId),
 		})
+
+		console.log('group', group)
 
 		return {
 			group,
