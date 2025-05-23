@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 
 import { Clock, MapPin, Star, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -109,6 +110,7 @@ const saveJoinedRoom = (room: any) => {
 }
 
 export function RoomList() {
+	const navigate = useNavigate()
 	const [rooms, setRooms] = useState(mockRooms)
 
 	const handleJoinRoom = (e: any, room: any) => {
@@ -131,7 +133,7 @@ export function RoomList() {
 	}
 
 	const handleCardClick = (roomId: string) => {
-		window.open(`/restaurant/${roomId}`)
+		navigate(`/restaurant/${roomId}`)
 	}
 
 	const handleReviewsClick = (e: any, roomId: string) => {

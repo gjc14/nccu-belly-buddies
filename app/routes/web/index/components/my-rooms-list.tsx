@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
 
 import { Clock, Edit, MapPin, MessageSquare, Trash2, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -54,6 +55,7 @@ const loadJoinedRooms = () => {
 }
 
 export function MyRoomsList() {
+	const navigate = useNavigate()
 	const [myRooms, setMyRooms] = useState<any[]>([])
 	const [roomToDelete, setRoomToDelete] = useState<string | null>(null)
 
@@ -92,7 +94,7 @@ export function MyRoomsList() {
 	}
 
 	const handleCardClick = (roomId: string) => {
-		window.open(`/restaurant/${roomId}`)
+		navigate(`/restaurant/${roomId}`)
 	}
 
 	const handleCommentClick = (e: any) => {
@@ -114,7 +116,7 @@ export function MyRoomsList() {
 				<p className="text-muted-foreground mb-6">
 					Join a room or create your own to get started
 				</p>
-				<Button onClick={() => window.open('/')}>Browse Rooms</Button>
+				<Button onClick={() => navigate('/')}>Browse Rooms</Button>
 			</div>
 		)
 	}

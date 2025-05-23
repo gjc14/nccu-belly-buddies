@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
 import { ArrowLeft, Clock, ExternalLink, MapPin, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -154,6 +154,7 @@ const saveJoinedRoom = (room: any) => {
 
 export default function RestaurantDetails() {
 	const params = useParams()
+	const navigate = useNavigate()
 	const [room, setRoom] = useState<any>()
 
 	useEffect(() => {
@@ -162,7 +163,7 @@ export default function RestaurantDetails() {
 		if (foundRoom) {
 			setRoom(foundRoom)
 		} else {
-			window.open('/')
+			navigate('/')
 		}
 	}, [params.id])
 
@@ -193,7 +194,7 @@ export default function RestaurantDetails() {
 				<Button
 					variant="ghost"
 					className="mb-4 pl-0"
-					onClick={() => window.open()}
+					onClick={() => navigate(-1)}
 				>
 					<ArrowLeft className="mr-2 h-4 w-4" />
 					Back
