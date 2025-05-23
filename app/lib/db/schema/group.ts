@@ -36,12 +36,10 @@ export const groupMember = pgTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),
-        userName: text('user_name')
-            .notNull()
-            .references(() => user.name),
-        role: text('role')
-            .notNull()
-            .default('Member'),
+		userName: text('user_name')
+			.notNull()
+			.references(() => user.name),
+		role: text('role').notNull().default('Member'),
 		...timestampAttributes,
 	},
 	table => [table.groupId, table.userId],

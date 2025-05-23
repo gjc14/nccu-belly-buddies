@@ -7,12 +7,13 @@
 
 import { redirect } from 'react-router'
 
-import { eq, and, sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 
 import { auth } from '~/lib/auth/auth.server'
 import { db } from '~/lib/db/db.server'
 import * as schema from '~/lib/db/schema'
 import type { ConventionalActionResponse } from '~/lib/utils'
+
 import type { Route } from './+types/group'
 
 // action 負責處理 POST、PUT、DELETE request
@@ -20,7 +21,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 	// 如果沒有登入，重新導向登入頁面
 	const session = await auth.api.getSession(request)
 	if (!session) throw redirect('/auth')
-	
+
 	const groupId = params.id // 我有在 app/routes/web/routes.ts 設定 /:id
 	const user = session.user
 	// 以下可以開始處理 user 與 group id
@@ -30,32 +31,35 @@ export async function action({ request, params }: Route.ActionArgs) {
 		case 'POST':
 			// 處理 POST 請求，通常是用來創建新的資源
 			// 例如：
-			const postGroup = await db.insert(schema.group).values({
-				name: '新群組',
-				description: '這是一個新的群組',
-				creatorId: user.id,
-				numofPeople:10
-				// ...其他欄位
-			  }).returning({ id: schema.group.id, name: schema.group.name });
-			  if (!postGroup[0]) {
-				throw new Error('新增群組失敗');
-			  }
-			  
-			const newGroup = postGroup[0]; 
-			
+			const postGroup = await db
+				.insert(schema.group)
+				.values({
+					name: '新群組',
+					description: '這是一個新的群組',
+					creatorId: user.id,
+					numofPeople: 10,
+					// ...其他欄位
+				})
+				.returning({ id: schema.group.id, name: schema.group.name })
+			if (!postGroup[0]) {
+				throw new Error('新增群組失敗')
+			}
+
+			const newGroup = postGroup[0]
+
 			const addAdmin = await db.insert(schema.groupMember).values({
 				groupId: newGroup.id,
 				groupName: newGroup.name,
 				userId: user.id,
 				userName: user.name,
-				role:'Admin'
+				role: 'Admin',
 			})
 
 			return {
 				msg: '群組已創建，管理員已加入',
 				data: {
-					group:newGroup, 
-					admin:addAdmin,
+					group: newGroup,
+					admin: addAdmin,
 				},
 			} satisfies ConventionalActionResponse
 
@@ -87,84 +91,85 @@ export async function action({ request, params }: Route.ActionArgs) {
 			//	msg: '群組已刪除',
 			//	data: deletedGroup,
 			//} satisfies ConventionalActionResponse
-    		
-			//管理員退出群組可選擇刪除或變更管理員
+
+			// 管理員退出群組可選擇刪除或變更管理員
 			const currentAdmin = await db
-        		.select({ role: schema.groupMember.role })
-        		.from(schema.groupMember)
-        		.where(
-            		and(
-                		eq(schema.groupMember.userId, user.id),
-                		eq(schema.groupMember.groupId, groupId)
-           	 	)
-        	);
-
-    		if (currentAdmin[0]?.role === 'Admin') {
-       		 // Check if the admin has chosen to delete the group
-        	const formData = await request.formData();
-			const action = formData.get('action'); // 'delete' or 'assign'
-			const newAdminId = formData.get('newAdminId'); // Optional new admin ID
-			let earliestMember: { userId: string }[] = []; // Declare earliestMember 
-
-		if (action === 'delete') {
-			// Delete the group
-			await db.delete(schema.group).where(eq(schema.group.id, groupId));
-			await db.delete(schema.groupMember).where(eq(schema.groupMember.groupId, groupId));
-
-			return {
-				msg: '群組已刪除',
-			} satisfies ConventionalActionResponse
-
-		} else if (action === 'assign') {
-			if (newAdminId) {
-				// Assign the chosen member as the new admin
-				await db
-					.update(schema.groupMember)
-					.set({ role: 'Admin' })
-					.where(
-						and(
-							eq(schema.groupMember.userId, newAdminId),
-							eq(schema.groupMember.groupId, groupId)
-						)
-					);
-			} else {
-				// Automatically assign the earliest member as the new admin
-				earliestMember = await db
-					.select({ userId: schema.groupMember.userId })
-					.from(schema.groupMember)
-					.where(eq(schema.groupMember.groupId, groupId))
-					.orderBy(sql`${schema.groupMember.createdAt} ASC`)
-					.limit(1);
-
-				if (earliestMember.length > 0) {
-					await db
-						.update(schema.groupMember)
-						.set({ role: 'Admin' })
-						.where(
-							and(
-								eq(schema.groupMember.userId, earliestMember[0].userId),
-								eq(schema.groupMember.groupId, groupId)
-							)
-						);
-				}
-			}
-
-			// Remove the current admin from the group
-			await db
-				.delete(schema.groupMember)
+				.select({ role: schema.groupMember.role })
+				.from(schema.groupMember)
 				.where(
 					and(
 						eq(schema.groupMember.userId, user.id),
-						eq(schema.groupMember.groupId, groupId)
-					)
-				);
+						eq(schema.groupMember.groupId, groupId),
+					),
+				)
 
-			return {
-				msg: '管理員已更新',
-				data: newAdminId || earliestMember[0]?.userId,
-			} satisfies ConventionalActionResponse;
-		}
-    }
+			if (currentAdmin[0]?.role === 'Admin') {
+				// Check if the admin has chosen to delete the group
+				const formData = await request.formData()
+				const action = formData.get('action') // 'delete' or 'assign'
+				const newAdminId = formData.get('newAdminId') // Optional new admin ID
+				let earliestMember: { userId: string }[] = [] // Declare earliestMember
+
+				if (action === 'delete') {
+					// Delete the group
+					await db.delete(schema.group).where(eq(schema.group.id, groupId))
+					await db
+						.delete(schema.groupMember)
+						.where(eq(schema.groupMember.groupId, groupId))
+
+					return {
+						msg: '群組已刪除',
+					} satisfies ConventionalActionResponse
+				} else if (action === 'assign') {
+					if (newAdminId) {
+						// Assign the chosen member as the new admin
+						await db
+							.update(schema.groupMember)
+							.set({ role: 'Admin' })
+							.where(
+								and(
+									eq(schema.groupMember.userId, newAdminId),
+									eq(schema.groupMember.groupId, groupId),
+								),
+							)
+					} else {
+						// Automatically assign the earliest member as the new admin
+						earliestMember = await db
+							.select({ userId: schema.groupMember.userId })
+							.from(schema.groupMember)
+							.where(eq(schema.groupMember.groupId, groupId))
+							.orderBy(sql`${schema.groupMember.createdAt} ASC`)
+							.limit(1)
+
+						if (earliestMember.length > 0) {
+							await db
+								.update(schema.groupMember)
+								.set({ role: 'Admin' })
+								.where(
+									and(
+										eq(schema.groupMember.userId, earliestMember[0].userId),
+										eq(schema.groupMember.groupId, groupId),
+									),
+								)
+						}
+					}
+
+					// Remove the current admin from the group
+					await db
+						.delete(schema.groupMember)
+						.where(
+							and(
+								eq(schema.groupMember.userId, user.id),
+								eq(schema.groupMember.groupId, groupId),
+							),
+						)
+
+					return {
+						msg: '管理員已更新',
+						data: newAdminId || earliestMember[0]?.userId,
+					} satisfies ConventionalActionResponse
+				}
+			}
 		default:
 			throw new Response('', {
 				status: 405,
