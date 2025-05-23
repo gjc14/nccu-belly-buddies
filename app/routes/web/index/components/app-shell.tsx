@@ -17,7 +17,7 @@ export function AppShell({ children }: AppShellProps) {
 	const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false)
 
 	return (
-		<div className="flex h-screen overflow-hidden">
+		<div className="flex flex-col md:flex-row h-screen overflow-hidden">
 			{/* Desktop Sidebar - Reduced width */}
 			<aside className="hidden md:flex w-52 flex-col border-r bg-muted/40 p-4">
 				<div className="flex items-center gap-2 mb-6">
@@ -101,7 +101,9 @@ export function AppShell({ children }: AppShellProps) {
 			</Sheet>
 
 			{/* Main Content */}
-			<main className="flex-1 overflow-y-auto h-screen">{children}</main>
+			<main className="flex-1 overflow-y-auto h-screen px-3 md:px-5">
+				{children}
+			</main>
 
 			{/* Create Room Dialog */}
 			{isCreateRoomOpen && (
