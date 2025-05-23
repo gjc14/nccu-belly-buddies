@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { AppShell } from "@/components/app-shell"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+// import { useParams, useRouter } from "next/navigation"
+import { useParams } from "react-router"
+import { AppShell } from "../../components/app-shell"
+import { Button } from "~/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Clock, MapPin, Users, ArrowLeft, ExternalLink } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 // Combined mock data (this would come from an API in a real app)
 const mockRooms = [
@@ -124,11 +125,11 @@ const mockRooms = [
 ]
 
 // Save joined room to localStorage
-const saveJoinedRoom = (room) => {
+const saveJoinedRoom = (room:any) => {
   try {
     const existingRooms = JSON.parse(localStorage.getItem("myRooms") || "[]")
     // Check if room is already joined
-    if (!existingRooms.some((r) => r.id === room.id)) {
+    if (!existingRooms.some((r:any) => r.id === room.id)) {
       const newRoom = { ...room, isHost: false }
       localStorage.setItem("myRooms", JSON.stringify([...existingRooms, newRoom]))
     }
@@ -139,9 +140,7 @@ const saveJoinedRoom = (room) => {
 
 export default function RestaurantDetails() {
   const params = useParams()
-  const router = useRouter()
-  const { toast } = useToast()
-  const [room, setRoom] = useState(null)
+  const [room, setRoom] = useState<any>()
 
   useEffect(() => {
     // In a real app, this would be an API call
@@ -149,19 +148,18 @@ export default function RestaurantDetails() {
     if (foundRoom) {
       setRoom(foundRoom)
     } else {
-      router.push("/")
+      window.open("/")
     }
-  }, [params.id, router])
+  }, [params.id])
 
   const handleJoinRoom = () => {
     if (room) {
       // Save to "My Rooms"
       saveJoinedRoom(room)
 
-      toast({
-        title: "Joined room!",
-        description: "You've successfully joined the room. Check 'My Rooms' to see it.",
-      })
+      toast(
+        "Joined room! You've successfully joined the room. Check 'My Rooms' to see it.",
+      )
     }
   }
 
@@ -178,7 +176,7 @@ export default function RestaurantDetails() {
   return (
     <AppShell>
       <div className="container py-6">
-        <Button variant="ghost" className="mb-4 pl-0" onClick={() => router.back()}>
+        <Button variant="ghost" className="mb-4 pl-0" onClick={() => window.open()}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
