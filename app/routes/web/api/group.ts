@@ -29,31 +29,71 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 	switch (request.method) {
 		case 'POST':
-			// 處理 POST 請求，通常是用來創建新的資源
-			// 例如：
+			// 從前端 POST 的 formData 中取得資料
+			const formData = await request.formData()
+			const groupFormData = {
+				name: formData.get('groupName'),
+				description: formData.get('groupDescription'),
+				restaurantID: formData.get('restaurantID'),
+				status: formData.get('status'),
+				proposedBudget: formData.get('proposedBudget'),
+				foodPreference: formData.get('foodPreference'),
+				numofPeople: formData.get('numofPeople'),
+				startTime: formData.get('startTime'),
+				spokenLanguage: formData.get('spokenLanguage'),
+			}
+
+			if (
+				typeof groupFormData.name !== 'string' ||
+				typeof groupFormData.description !== 'string' ||
+				typeof groupFormData.restaurantID !== 'string' ||
+				typeof groupFormData.status !== 'string' ||
+				typeof groupFormData.proposedBudget !== 'string' ||
+				typeof groupFormData.foodPreference !== 'string' ||
+				typeof groupFormData.numofPeople !== 'number' ||
+				typeof groupFormData.startTime !== 'string' ||
+				typeof groupFormData.spokenLanguage !== 'string'
+			) {
+				return {
+					err: '請檢查輸入的資料是否正確',
+				} satisfies ConventionalActionResponse
+			}
+
 			const postGroup = await db
 				.insert(schema.group)
 				.values({
-					name: '新群組',
-					description: '這是一個新的群組',
 					creatorId: user.id,
-					numofPeople: 10,
-					// ...其他欄位
+					name: groupFormData.name,
+					description: groupFormData.description,
+					restaurantID: groupFormData.restaurantID,
+					status: groupFormData.status,
+					proposedBudget: groupFormData.proposedBudget,
+					foodPreference: groupFormData.foodPreference,
+					numofPeople: groupFormData.numofPeople,
+					startTime: new Date(groupFormData.startTime),
+					spokenLanguage: groupFormData.spokenLanguage,
 				})
-				.returning({ id: schema.group.id, name: schema.group.name })
+				.returning()
+
 			if (!postGroup[0]) {
 				throw new Error('新增群組失敗')
 			}
 
 			const newGroup = postGroup[0]
 
-			const addAdmin = await db.insert(schema.groupMember).values({
-				groupId: newGroup.id,
-				groupName: newGroup.name,
-				userId: user.id,
-				userName: user.name,
-				role: 'Admin',
-			})
+			const [addAdmin] = await db
+				// 他回傳會是 array，因為 insert 可以同時新增多筆資料，會是 [groupMember1, groupMember2, ...]
+				// 但因為我們只有新增一筆，可以直接使用 [addAdmin] 來取得第一筆資料，同時將 groupMember1 資料設定為變數 addAdmin
+				.insert(schema.groupMember)
+				.values({
+					groupId: newGroup.id,
+					groupName: newGroup.name,
+					userId: user.id,
+					userName: user.name,
+					role: 'Admin',
+				})
+				// 這邊要加上 returning 才會有 admin 的資料
+				.returning()
 
 			return {
 				msg: '群組已創建，管理員已加入',
@@ -66,6 +106,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 		case 'PUT':
 			// 處理 PUT 請求，通常是用來更新現有的資源
 			// 例如：
+			// TODO: 更新群組資料
 			const updatedGroup = await db
 				.update(schema.group)
 				.set({
