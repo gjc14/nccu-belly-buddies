@@ -50,7 +50,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 				typeof groupFormData.status !== 'string' ||
 				typeof groupFormData.proposedBudget !== 'string' ||
 				typeof groupFormData.foodPreference !== 'string' ||
-				typeof groupFormData.numofPeople !== 'number' ||
+				Number.isNaN(groupFormData.numofPeople) ||
 				typeof groupFormData.startTime !== 'string' ||
 				typeof groupFormData.spokenLanguage !== 'string'
 			) {
@@ -69,7 +69,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 					status: groupFormData.status,
 					proposedBudget: groupFormData.proposedBudget,
 					foodPreference: groupFormData.foodPreference,
-					numofPeople: groupFormData.numofPeople,
+					numofPeople: Number(groupFormData.numofPeople),
 					startTime: new Date(groupFormData.startTime),
 					spokenLanguage: groupFormData.spokenLanguage,
 				})

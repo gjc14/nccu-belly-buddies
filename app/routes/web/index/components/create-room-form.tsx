@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useState } from 'react'
+import { useFetcher } from 'react-router'
 
 import { toast } from 'sonner'
 
@@ -22,13 +23,18 @@ interface CreateRoomFormProps {
 }
 
 export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
+	const fetcher = useFetcher()
 	const [formData, setFormData] = useState({
-		restaurantName: '',
-		description: '',
-		location: '',
+		groupName: '', // Changed from restaurantName
+		groupDescription: '', // Changed from description
+		restaurantID: '', // New field
+		status: 'active', // New field, default 'active'
+		proposedBudget: '', // New field
+		foodPreference: '', // New field
+		numofPeople: 4, // Changed from maxPeople
 		date: '',
 		time: '',
-		maxPeople: '4',
+		spokenLanguage: '', // New field
 	})
 	const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -43,6 +49,23 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 		e.preventDefault()
 		setIsSubmitting(true)
 
+		const submitData = {
+			groupName: formData.groupName,
+			groupDescription: formData.groupDescription,
+			restaurantID: formData.restaurantID,
+			status: formData.status,
+			proposedBudget: formData.proposedBudget,
+			foodPreference: formData.foodPreference,
+			numofPeople: formData.numofPeople, // Will be sent as string
+			startTime: `${formData.date}T${formData.time}`, // Combined date and time
+			spokenLanguage: formData.spokenLanguage,
+		}
+
+		fetcher.submit(submitData, {
+			method: 'post',
+			action: '/api/group/create', // Kept existing action
+		})
+
 		// Simulate API call
 		setTimeout(() => {
 			setIsSubmitting(false)
@@ -53,7 +76,7 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="sm:max-w-[425px]">
+			<DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle>Create a new room</DialogTitle>
 					<DialogDescription>
@@ -63,35 +86,40 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 				<form onSubmit={handleSubmit}>
 					<div className="grid gap-4 py-4">
 						<div className="grid gap-2">
-							<Label htmlFor="restaurantName">Restaurant Name</Label>
+							<Label htmlFor="groupName">Group Name</Label>{' '}
+							{/* Changed from restaurantName */}
 							<Input
-								id="restaurantName"
-								name="restaurantName"
-								value={formData.restaurantName}
+								id="groupName"
+								name="groupName" // Changed from restaurantName
+								value={formData.groupName}
 								onChange={handleChange}
 								required
 							/>
 						</div>
 						<div className="grid gap-2">
-							<Label htmlFor="description">Description</Label>
+							<Label htmlFor="groupDescription">Description</Label>{' '}
+							{/* Changed from description */}
 							<Textarea
-								id="description"
-								name="description"
-								value={formData.description}
+								id="groupDescription"
+								name="groupDescription" // Changed from description
+								value={formData.groupDescription}
 								onChange={handleChange}
 								required
 							/>
 						</div>
 						<div className="grid gap-2">
-							<Label htmlFor="location">Location</Label>
+							{/* TODO: 從後端取得餐廳 */}
+							<Label htmlFor="restaurantID">Restaurant ID</Label>{' '}
+							{/* New Field */}
 							<Input
-								id="location"
-								name="location"
-								value={formData.location}
+								id="restaurantID"
+								name="restaurantID"
+								value={formData.restaurantID}
 								onChange={handleChange}
-								required
+								required // Assuming this is required by API
 							/>
 						</div>
+						{/* Removed Location field, API uses restaurantID */}
 						<div className="grid grid-cols-2 gap-4">
 							<div className="grid gap-2">
 								<Label htmlFor="date">Date</Label>
@@ -117,16 +145,50 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 							</div>
 						</div>
 						<div className="grid gap-2">
-							<Label htmlFor="maxPeople">Maximum People</Label>
+							<Label htmlFor="numofPeople">Maximum People</Label>{' '}
+							{/* Changed from maxPeople */}
 							<Input
-								id="maxPeople"
-								name="maxPeople"
+								id="numofPeople"
+								name="numofPeople" // Changed from maxPeople
 								type="number"
 								min="2"
-								max="20"
-								value={formData.maxPeople}
+								max="20" // Max can be adjusted based on requirements
+								value={formData.numofPeople}
 								onChange={handleChange}
 								required
+							/>
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="proposedBudget">Proposed Budget</Label>{' '}
+							{/* New Field */}
+							<Input
+								id="proposedBudget"
+								name="proposedBudget"
+								value={formData.proposedBudget}
+								onChange={handleChange}
+								// required based on API - assuming not strictly required for now
+							/>
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="foodPreference">Food Preference</Label>{' '}
+							{/* New Field */}
+							<Input
+								id="foodPreference"
+								name="foodPreference"
+								value={formData.foodPreference}
+								onChange={handleChange}
+								// required based on API - assuming not strictly required for now
+							/>
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="spokenLanguage">Spoken Language</Label>{' '}
+							{/* New Field */}
+							<Input
+								id="spokenLanguage"
+								name="spokenLanguage"
+								value={formData.spokenLanguage}
+								onChange={handleChange}
+								// required based on API - assuming not strictly required for now
 							/>
 						</div>
 					</div>
