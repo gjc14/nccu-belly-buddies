@@ -87,9 +87,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 				.insert(schema.groupMember)
 				.values({
 					groupId: newGroup.id,
-					groupName: newGroup.name,
 					userId: user.id,
-					userName: user.name,
 					role: 'Admin',
 				})
 				// 這邊要加上 returning 才會有 admin 的資料

@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm'
 import {
 	index,
 	integer,
@@ -18,7 +19,7 @@ export const group = pgTable('group', {
 	creatorId: text('creator_id')
 		.notNull()
 		.references(() => user.id),
-	restaurantID: text('restaurant_id').references(() => restaurant.id, {
+	restaurantID: uuid('restaurant_id').references(() => restaurant.id, {
 		onDelete: 'cascade',
 	}),
 	status: text('status').notNull().default('active'),
@@ -34,18 +35,12 @@ export const group = pgTable('group', {
 export const groupMember = pgTable(
 	'group_member',
 	{
-		groupId: text('group_id')
+		groupId: uuid('group_id')
 			.notNull()
 			.references(() => group.id, { onDelete: 'cascade' }),
-		groupName: text('group_name')
-			.notNull()
-			.references(() => group.name),
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),
-		userName: text('user_name')
-			.notNull()
-			.references(() => user.name),
 		role: text('role').notNull().default('Member'),
 		...timestampAttributes,
 	},
@@ -54,3 +49,7 @@ export const groupMember = pgTable(
 		index('group_member_user_id_idx').on(table.userId),
 	],
 )
+
+export const groupRelation = relations(group, ({ many }) => ({
+	groupMembers: many(groupMember),
+}))

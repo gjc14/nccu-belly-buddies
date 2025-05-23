@@ -75,9 +75,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 			// 4. Insert new member
 			const newMember = await db.insert(schema.groupMember).values({
 				groupId: groupId,
-				groupName: group.name,
 				userId: user.id,
-				userName: user.name,
 			})
 
 			if (userCount[0].count + 1 === groupData[0].numOfPeople) {
@@ -91,9 +89,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 				msg: '新成員已加入',
 				data: await db.insert(schema.groupMember).values({
 					groupId: groupId,
-					groupName: group.name,
 					userId: user.id,
-					userName: user.name,
 				}),
 			} satisfies ConventionalActionResponse
 		}
