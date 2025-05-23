@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSubmit } from 'react-router'
 
 import { Clock, Edit, MapPin, MessageSquare, Trash2, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -56,6 +56,7 @@ const loadJoinedRooms = () => {
 
 export function MyRoomsList() {
 	const navigate = useNavigate()
+	const submit = useSubmit()
 	const [myRooms, setMyRooms] = useState<any[]>([])
 	const [roomToDelete, setRoomToDelete] = useState<string | null>(null)
 
@@ -89,7 +90,14 @@ export function MyRoomsList() {
 		if (roomToDelete) {
 			setMyRooms(myRooms.filter(room => room.id !== roomToDelete))
 			setRoomToDelete(null)
-			toast('Room deleted Your room has been deleted successfully.')
+			submit(
+				{ action: 'delete' },
+				{
+					action: `/api/group/${roomToDelete}`,
+					method: 'delete',
+					navigate: false,
+				},
+			)
 		}
 	}
 
