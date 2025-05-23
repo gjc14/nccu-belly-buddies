@@ -243,20 +243,26 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	// 以下可以開始處理 user 與 group id
 	// ...
 
-	const group = await db.query.group.findFirst({
-		where: (groupTable, { eq }) => eq(groupTable.id, groupId),
-	})
+	if (groupId !== '') {
+		// 回傳所有 group
 
-	// 取得所有狀態為 active 的群組
-	const activeGroups = await db.query.group.findMany({
-		where: (groupTable, { eq }) => eq(groupTable.status, 'active'),
-	})
+		// 取得所有狀態為 active 的群組
+		const activeGroups = await db.query.group.findMany({
+			where: (groupTable, { eq }) => eq(groupTable.status, 'active'),
+		})
 
-	// 返回資料給前端第一次頁面顯示所需要的內容，例如用 groupId 取得 group
-	return {
-		api: '群組',
-		id: groupId,
-		group: group,
-		activeGroups: activeGroups,
+		// 返回資料給前端第一次頁面顯示所需要的內容，例如用 groupId 取得 group
+		return {
+			activeGroups: activeGroups,
+		}
+	} else {
+		// 返回指定的 groupId
+		const group = await db.query.group.findFirst({
+			where: (groupTable, { eq }) => eq(groupTable.id, groupId),
+		})
+
+		return {
+			group,
+		}
 	}
 }
