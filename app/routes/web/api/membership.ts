@@ -1,65 +1,32 @@
-/** 組員
- * 網址：http://localhost:5173/api/membership/123
- * /api/membership 是固定的，後面的 123 是變數，從 params.id 取得這個變數，請見 loader/action 的使用方法
- * 我有在 app/routes/web/routes.ts 設定 /:id
- * （「:id」表示變數名稱是 id 的變數，可以從 params.id 取得，也可以是「:membershipId」，那 params 就要用 params.membershipId 取得）
- */
-
 import { redirect } from 'react-router'
-
 import { auth } from '~/lib/auth/auth.server'
+import { db } from '~/lib/db/db.server'
+import { groupMember } from '~/lib/db/schema/group'
+import { eq, and } from 'drizzle-orm'
 
-import type { Route } from './+types/membership'
-
-// action 負責處理 POST、PUT、DELETE request
-export async function action({ request, params }: Route.ActionArgs) {
-	// 如果沒有登入，重新導向登入頁面
+export async function action({ request, params }: { request: Request; params: { id: string } }) {
 	const session = await auth.api.getSession(request)
 	if (!session) throw redirect('/auth')
 
-	const membershipId = params.id // 我有在 app/routes/web/routes.ts 設定 /:id
 	const user = session.user
-	// 以下可以開始處理 user 與 membership id
-	// ...
+	const groupId = params.id
 
 	switch (request.method) {
-		case 'POST':
-			// 處理 POST 請求，通常是用來創建新的資源
-			break
-		case 'PUT':
-			// 處理 PUT 請求，通常是用來更新現有的資源
-			break
-		case 'DELETE':
-			// 處理 DELETE 請求，通常是用來刪除資源
-			break
-		default:
-			throw new Response('', {
-				status: 405,
-				statusText: 'Method Not Allowed',
+		case 'POST': {
+			await db.insert(groupMember).values({
+				groupId,
+				userId: user.id,
 			})
-	}
-
-	// 返回資料
-	return {
-		api: '群組',
-		id: membershipId,
-	}
-}
-
-// Loader 負責處理 GET request
-export async function loader({ request, params }: Route.LoaderArgs) {
-	// 如果沒有登入，重新導向登入頁面
-	const session = await auth.api.getSession(request)
-	if (!session) throw redirect('/auth')
-
-	const membershipId = params.id // 我有在 app/routes/web/routes.ts 設定 /:id
-	const user = session.user
-	// 以下可以開始處理 user 與 membership id
-	// ...
-
-	// 返回資料
-	return {
-		api: '群組',
-		id: membershipId,
+			return { msg: '成功加入群組' }
+		}
+		case 'DELETE': {
+			await db.delete(groupMember).where(and(
+				eq(groupMember.groupId, groupId),
+				eq(groupMember.userId, user.id)
+			))
+			return { msg: '已退出群組' }
+		}
+		default:
+			throw new Response('', { status: 405 })
 	}
 }
