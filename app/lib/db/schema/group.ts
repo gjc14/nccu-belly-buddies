@@ -1,4 +1,11 @@
-import { integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import {
+	index,
+	integer,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+} from 'drizzle-orm/pg-core'
 
 import { user } from './auth'
 import { timestampAttributes } from './helpers'
@@ -36,13 +43,14 @@ export const groupMember = pgTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),
-        userName: text('user_name')
-            .notNull()
-            .references(() => user.name),
-        role: text('role')
-            .notNull()
-            .default('Member'),
+		userName: text('user_name')
+			.notNull()
+			.references(() => user.name),
+		role: text('role').notNull().default('Member'),
 		...timestampAttributes,
 	},
-	table => [table.groupId, table.userId],
+	table => [
+		index('group_member_group_id_idx').on(table.groupId),
+		index('group_member_user_id_idx').on(table.userId),
+	],
 )
