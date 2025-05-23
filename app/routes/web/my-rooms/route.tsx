@@ -1,5 +1,5 @@
-import { AppShell } from '../components/app-shell'
-import { MyRoomsList } from '../components/my-rooms-list'
+import { AppShell } from '../index/components/app-shell'
+import { MyRoomsList } from '../index/components/my-rooms-list'
 
 export default function MyRooms() {
 	return (

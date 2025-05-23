@@ -14,7 +14,7 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 
-import { AppShell } from '../../components/app-shell'
+import { AppShell } from '../index/components/app-shell'
 
 // Combined mock data (this would come from an API in a real app)
 const mockRooms = [

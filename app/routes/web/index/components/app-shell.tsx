@@ -7,7 +7,7 @@ import { Menu, PlusCircle, Utensils } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '~/components/ui/sheet'
 
-import { CreateRoomForm } from '../components/create-room-form'
+import { CreateRoomForm } from './create-room-form'
 
 interface AppShellProps {
 	children: React.ReactNode
