@@ -7,7 +7,7 @@
 
 import { redirect } from 'react-router'
 
-import { and, eq, sql } from 'drizzle-orm'
+import { and, asc, eq, sql } from 'drizzle-orm'
 
 import { auth } from '~/lib/auth/auth.server'
 import { db } from '~/lib/db/db.server'
@@ -108,20 +108,26 @@ export async function action({ request, params }: Route.ActionArgs) {
 				const formData = await request.formData()
 				const action = formData.get('action') // 'delete' or 'assign'
 				const newAdminId = formData.get('newAdminId') // Optional new admin ID
-				let earliestMember: { userId: string }[] = [] // Declare earliestMember
+				// p.s. eraliest member 在 assign 的時候會用到
 
 				if (action === 'delete') {
 					// Delete the group
 					await db.delete(schema.group).where(eq(schema.group.id, groupId))
-					await db
-						.delete(schema.groupMember)
-						.where(eq(schema.groupMember.groupId, groupId))
+
+					// p.s. 在 groupMember 中有設定 goupId onDelete: 'cascade'，就會在刪除的同時自動刪除 groupMember 中的資料
 
 					return {
 						msg: '群組已刪除',
 					} satisfies ConventionalActionResponse
 				} else if (action === 'assign') {
+					let newAdminAssigned: string | undefined = undefined
+
 					if (newAdminId) {
+						// p.s. 在使用前檢查 adminId type === string 以避免 type error
+						if (typeof newAdminId !== 'string') {
+							throw new Error('Invalid new admin ID')
+						}
+
 						// Assign the chosen member as the new admin
 						await db
 							.update(schema.groupMember)
@@ -132,26 +138,33 @@ export async function action({ request, params }: Route.ActionArgs) {
 									eq(schema.groupMember.groupId, groupId),
 								),
 							)
+
+						newAdminAssigned = newAdminId
 					} else {
 						// Automatically assign the earliest member as the new admin
-						earliestMember = await db
+						// p.s. 可以參考更簡潔的 asc desc 寫法：https://orm.drizzle.team/docs/select#order-by
+						const earliestMember = await db
 							.select({ userId: schema.groupMember.userId })
 							.from(schema.groupMember)
 							.where(eq(schema.groupMember.groupId, groupId))
-							.orderBy(sql`${schema.groupMember.createdAt} ASC`)
+							.orderBy(asc(schema.groupMember.createdAt))
 							.limit(1)
 
-						if (earliestMember.length > 0) {
-							await db
-								.update(schema.groupMember)
-								.set({ role: 'Admin' })
-								.where(
-									and(
-										eq(schema.groupMember.userId, earliestMember[0].userId),
-										eq(schema.groupMember.groupId, groupId),
-									),
-								)
+						// 這邊如果沒有找到任何成員，就拋出錯誤，避免後面要刪除 user.id 的時候其實還沒有 update new admin
+						if (earliestMember.length === 0) {
+							throw new Error('No members found in the group')
 						}
+						await db
+							.update(schema.groupMember)
+							.set({ role: 'Admin' })
+							.where(
+								and(
+									eq(schema.groupMember.userId, earliestMember[0].userId),
+									eq(schema.groupMember.groupId, groupId),
+								),
+							)
+
+						newAdminAssigned = earliestMember[0].userId
 					}
 
 					// Remove the current admin from the group
@@ -166,7 +179,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 					return {
 						msg: '管理員已更新',
-						data: newAdminId || earliestMember[0]?.userId,
+						data: { newAdminAssigned: newAdminAssigned }, // { newAdminAssigned: newAdminAssigned } 其實可以縮寫成 { newAdminAssigned }，因為 key 與 value 一樣
 					} satisfies ConventionalActionResponse
 				}
 			}
