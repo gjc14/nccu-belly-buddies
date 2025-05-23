@@ -7,7 +7,7 @@
 
 import { redirect } from 'react-router'
 
-import { eq } from 'drizzle-orm'
+import { and, asc, eq, sql } from 'drizzle-orm'
 
 import { auth } from '~/lib/auth/auth.server'
 import { db } from '~/lib/db/db.server'
@@ -29,22 +29,82 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 	switch (request.method) {
 		case 'POST':
-			// 處理 POST 請求，通常是用來創建新的資源
-			// 例如：
-			const newGroup = await db.insert(schema.group).values({
-				name: '新群組',
-				description: '這是一個新的群組',
-				creatorId: user.id,
-				// ...其他欄位
-			})
+			// 從前端 POST 的 formData 中取得資料
+			const formData = await request.formData()
+			const groupFormData = {
+				name: formData.get('groupName'),
+				description: formData.get('groupDescription'),
+				restaurantID: formData.get('restaurantID'),
+				status: formData.get('status'),
+				proposedBudget: formData.get('proposedBudget'),
+				foodPreference: formData.get('foodPreference'),
+				numofPeople: formData.get('numofPeople'),
+				startTime: formData.get('startTime'),
+				spokenLanguage: formData.get('spokenLanguage'),
+			}
+
+			if (
+				typeof groupFormData.name !== 'string' ||
+				typeof groupFormData.description !== 'string' ||
+				typeof groupFormData.restaurantID !== 'string' ||
+				typeof groupFormData.status !== 'string' ||
+				typeof groupFormData.proposedBudget !== 'string' ||
+				typeof groupFormData.foodPreference !== 'string' ||
+				typeof groupFormData.numofPeople !== 'number' ||
+				typeof groupFormData.startTime !== 'string' ||
+				typeof groupFormData.spokenLanguage !== 'string'
+			) {
+				return {
+					err: '請檢查輸入的資料是否正確',
+				} satisfies ConventionalActionResponse
+			}
+
+			const postGroup = await db
+				.insert(schema.group)
+				.values({
+					creatorId: user.id,
+					name: groupFormData.name,
+					description: groupFormData.description,
+					restaurantID: groupFormData.restaurantID,
+					status: groupFormData.status,
+					proposedBudget: groupFormData.proposedBudget,
+					foodPreference: groupFormData.foodPreference,
+					numofPeople: groupFormData.numofPeople,
+					startTime: new Date(groupFormData.startTime),
+					spokenLanguage: groupFormData.spokenLanguage,
+				})
+				.returning()
+
+			if (!postGroup[0]) {
+				throw new Error('新增群組失敗')
+			}
+
+			const newGroup = postGroup[0]
+
+			const [addAdmin] = await db
+				// 他回傳會是 array，因為 insert 可以同時新增多筆資料，會是 [groupMember1, groupMember2, ...]
+				// 但因為我們只有新增一筆，可以直接使用 [addAdmin] 來取得第一筆資料，同時將 groupMember1 資料設定為變數 addAdmin
+				.insert(schema.groupMember)
+				.values({
+					groupId: newGroup.id,
+					userId: user.id,
+					role: 'Admin',
+				})
+				// 這邊要加上 returning 才會有 admin 的資料
+				.returning()
 
 			return {
-				msg: '群組已創建',
-				data: newGroup,
+				msg: '群組已創建，管理員已加入',
+				data: {
+					group: newGroup,
+					admin: addAdmin,
+				},
 			} satisfies ConventionalActionResponse
+
 		case 'PUT':
 			// 處理 PUT 請求，通常是用來更新現有的資源
 			// 例如：
+			// TODO: 更新群組資料
 			const updatedGroup = await db
 				.update(schema.group)
 				.set({
@@ -62,14 +122,106 @@ export async function action({ request, params }: Route.ActionArgs) {
 		case 'DELETE':
 			// 處理 DELETE 請求，通常是用來刪除資源
 			// 例如：
-			const deletedGroup = await db
-				.delete(schema.group)
-				.where(eq(schema.group.id, groupId)) // 記得使用 where，不然所有資料都會被刪掉
+			//const deletedGroup = await db
+			//	.delete(schema.group)
+			//	.where(eq(schema.group.id, groupId)) // 記得使用 where，不然所有資料都會被刪掉
 
-			return {
-				msg: '群組已刪除',
-				data: deletedGroup,
-			} satisfies ConventionalActionResponse
+			//return {
+			//	msg: '群組已刪除',
+			//	data: deletedGroup,
+			//} satisfies ConventionalActionResponse
+
+			// 管理員退出群組可選擇刪除或變更管理員
+			const currentAdmin = await db
+				.select({ role: schema.groupMember.role })
+				.from(schema.groupMember)
+				.where(
+					and(
+						eq(schema.groupMember.userId, user.id),
+						eq(schema.groupMember.groupId, groupId),
+					),
+				)
+
+			if (currentAdmin[0]?.role === 'Admin') {
+				// Check if the admin has chosen to delete the group
+				const formData = await request.formData()
+				const action = formData.get('action') // 'delete' or 'assign'
+				const newAdminId = formData.get('newAdminId') // Optional new admin ID
+				// p.s. eraliest member 在 assign 的時候會用到
+
+				if (action === 'delete') {
+					// Delete the group
+					await db.delete(schema.group).where(eq(schema.group.id, groupId))
+
+					// p.s. 在 groupMember 中有設定 goupId onDelete: 'cascade'，就會在刪除的同時自動刪除 groupMember 中的資料
+
+					return {
+						msg: '群組已刪除',
+					} satisfies ConventionalActionResponse
+				} else if (action === 'assign') {
+					let newAdminAssigned: string | undefined = undefined
+
+					if (newAdminId) {
+						// p.s. 在使用前檢查 adminId type === string 以避免 type error
+						if (typeof newAdminId !== 'string') {
+							throw new Error('Invalid new admin ID')
+						}
+
+						// Assign the chosen member as the new admin
+						await db
+							.update(schema.groupMember)
+							.set({ role: 'Admin' })
+							.where(
+								and(
+									eq(schema.groupMember.userId, newAdminId),
+									eq(schema.groupMember.groupId, groupId),
+								),
+							)
+
+						newAdminAssigned = newAdminId
+					} else {
+						// Automatically assign the earliest member as the new admin
+						// p.s. 可以參考更簡潔的 asc desc 寫法：https://orm.drizzle.team/docs/select#order-by
+						const earliestMember = await db
+							.select({ userId: schema.groupMember.userId })
+							.from(schema.groupMember)
+							.where(eq(schema.groupMember.groupId, groupId))
+							.orderBy(asc(schema.groupMember.createdAt))
+							.limit(1)
+
+						// 這邊如果沒有找到任何成員，就拋出錯誤，避免後面要刪除 user.id 的時候其實還沒有 update new admin
+						if (earliestMember.length === 0) {
+							throw new Error('No members found in the group')
+						}
+						await db
+							.update(schema.groupMember)
+							.set({ role: 'Admin' })
+							.where(
+								and(
+									eq(schema.groupMember.userId, earliestMember[0].userId),
+									eq(schema.groupMember.groupId, groupId),
+								),
+							)
+
+						newAdminAssigned = earliestMember[0].userId
+					}
+
+					// Remove the current admin from the group
+					await db
+						.delete(schema.groupMember)
+						.where(
+							and(
+								eq(schema.groupMember.userId, user.id),
+								eq(schema.groupMember.groupId, groupId),
+							),
+						)
+
+					return {
+						msg: '管理員已更新',
+						data: { newAdminAssigned: newAdminAssigned }, // { newAdminAssigned: newAdminAssigned } 其實可以縮寫成 { newAdminAssigned }，因為 key 與 value 一樣
+					} satisfies ConventionalActionResponse
+				}
+			}
 		default:
 			throw new Response('', {
 				status: 405,
@@ -89,14 +241,30 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	// 以下可以開始處理 user 與 group id
 	// ...
 
-	const group = await db.query.group.findFirst({
-		where: (groupTable, { eq }) => eq(groupTable.id, groupId),
-	})
+	// 如果是 route: /api/group/all，則 groupId 會是 all
+	if (groupId === 'all') {
+		// 回傳所有 group
 
-	// 返回資料給前端第一次頁面顯示所需要的內容，例如用 groupId 取得 group
-	return {
-		api: '群組',
-		id: groupId,
-		group: group,
+		// 取得所有狀態為 active 的群組
+		const activeGroups = await db.query.group.findMany({
+			where: (groupTable, { eq }) => eq(groupTable.status, 'active'),
+		})
+
+		console.log('activeGroups', activeGroups)
+		// 返回資料給前端第一次頁面顯示所需要的內容，例如用 groupId 取得 group
+		return {
+			activeGroups: activeGroups,
+		}
+	} else {
+		// 返回指定的 groupId
+		const group = await db.query.group.findFirst({
+			where: (groupTable, { eq }) => eq(groupTable.id, groupId),
+		})
+
+		console.log('group', group)
+
+		return {
+			group,
+		}
 	}
 }
