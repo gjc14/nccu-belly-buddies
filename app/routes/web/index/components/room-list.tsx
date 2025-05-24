@@ -27,7 +27,7 @@ const mockRooms = [
 		currentPeople: 3,
 		host: {
 			name: 'Alex',
-			avatar: '/placeholder.svg?height=40&width=40',
+			avatar: '/placeholders/avatar.png',
 		},
 		restaurantInfo: {
 			description:
@@ -45,7 +45,7 @@ const mockRooms = [
 		currentPeople: 2,
 		host: {
 			name: 'Sam',
-			avatar: '/placeholder.svg?height=40&width=40',
+			avatar: '/placeholders/avatar.png',
 		},
 		restaurantInfo: {
 			description:
@@ -63,7 +63,7 @@ const mockRooms = [
 		currentPeople: 5,
 		host: {
 			name: 'Jamie',
-			avatar: '/placeholder.svg?height=40&width=40',
+			avatar: '/placeholders/avatar.png',
 		},
 		restaurantInfo: {
 			description:
@@ -81,7 +81,7 @@ const mockRooms = [
 		currentPeople: 7,
 		host: {
 			name: 'Taylor',
-			avatar: '/placeholder.svg?height=40&width=40',
+			avatar: '/placeholders/avatar.png',
 		},
 		restaurantInfo: {
 			description:
@@ -161,7 +161,7 @@ export function RoomList() {
 							<div className="flex flex-col items-center">
 								<Avatar>
 									<AvatarImage
-										src={room.host.avatar || '/placeholder.svg'}
+										src={room.host.avatar || '/placeholders/avatar.png'}
 										alt={room.host.name}
 									/>
 									<AvatarFallback>{room.host.name.charAt(0)}</AvatarFallback>

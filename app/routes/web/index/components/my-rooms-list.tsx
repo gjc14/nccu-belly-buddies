@@ -150,7 +150,7 @@ export function MyRoomsList() {
 									{room.host ? (
 										<Avatar>
 											<AvatarImage
-												src={room.host.avatar || '/placeholder.svg'}
+												src={room.host.avatar || '/placeholders/avatar.png'}
 												alt={room.host.name}
 											/>
 											<AvatarFallback>
