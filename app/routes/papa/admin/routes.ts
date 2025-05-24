@@ -5,7 +5,10 @@ import {
 	type RouteConfig,
 } from '@react-router/dev/routes'
 
+import { bbAdminRoutes } from '../../plugins/bb/routes'
+
 const customizedRoutes = [
+	...bbAdminRoutes,
 	// Add your customized routes here
 ] satisfies RouteConfig
 

@@ -6,14 +6,13 @@ import {
 	type RouteConfig,
 } from '@react-router/dev/routes'
 
+import { bbWebRoutes } from '../plugins/bb/routes'
 import { blogRoute, indexRoute, splatRoute } from './papa.routes'
 
 // Configure your customized routes here
 const customizedRoutes = [
 	// Add your customized routes here
-	route('/', './routes/web/index/route.tsx'),
-	route('/restaurant/:id', './routes/web/restaurant/route.tsx'),
-	route('/my-rooms', './routes/web/my-rooms/route.tsx'),
+	...bbWebRoutes,
 
 	route('/auth', './routes/web/auth/route.tsx'),
 
