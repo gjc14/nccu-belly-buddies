@@ -1,6 +1,9 @@
 {
 	// For Tailwind CSS Intellisense to support class attribute in Tiptap Editor
 	"tailwindCSS.experimental.classRegex": ["class:\\s*?[\"'`]([^\"'`]*).*?,"],
-	// Auto format on save
-	"editor.formatOnSave": true
+	"editor.formatOnSave": true,
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"[jsonc]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	}
 }

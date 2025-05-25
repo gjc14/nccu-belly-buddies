@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { NavLink, useLocation } from 'react-router'
+import { useState } from 'react'
+import { NavLink } from 'react-router'
 
 import { ChevronRight } from 'lucide-react'
 
@@ -23,18 +23,6 @@ import Icon from '~/components/dynamic-icon'
 import type { PapaAdminMenuItem } from '~/routes/plugins/utils/get-plugin-configs.server'
 
 export function NavPlugins({ plugins }: { plugins: PapaAdminMenuItem[] }) {
-	const location = useLocation()
-	const currentPath = location.pathname
-
-	const checkActive = (item: PapaAdminMenuItem) => {
-		return (
-			currentPath.endsWith(item.url) ||
-			item.sub?.some(subItem =>
-				currentPath.endsWith(`${item.url}${subItem.url}`),
-			)
-		)
-	}
-
 	if (plugins.length <= 0) {
 		return (
 			<SidebarGroup className="group-data-[collapsible=icon]:hidden">
@@ -47,11 +35,7 @@ export function NavPlugins({ plugins }: { plugins: PapaAdminMenuItem[] }) {
 			<SidebarGroupLabel>Plugins</SidebarGroupLabel>
 			<SidebarMenu>
 				{plugins.map(item => {
-					const [isActive, setIsActive] = useState(checkActive(item))
-
-					useEffect(() => {
-						setIsActive(checkActive(item))
-					}, [currentPath])
+					const [isActive, setIsActive] = useState(false)
 
 					return (
 						<Collapsible
@@ -61,7 +45,13 @@ export function NavPlugins({ plugins }: { plugins: PapaAdminMenuItem[] }) {
 							onOpenChange={setIsActive}
 						>
 							<SidebarMenuItem>
-								<NavLink to={'/admin' + item.url} end>
+								<NavLink
+									to={
+										'/admin' +
+										(item.url.startsWith('/') ? item.url : `/${item.url}`)
+									}
+									end
+								>
 									{({ isActive }) => (
 										<SidebarMenuButton
 											tooltip={item.title}
@@ -88,7 +78,18 @@ export function NavPlugins({ plugins }: { plugins: PapaAdminMenuItem[] }) {
 											<SidebarMenuSub>
 												{item.sub?.map(subItem => (
 													<SidebarMenuSubItem key={subItem.title}>
-														<NavLink to={'/admin' + item.url + subItem.url} end>
+														<NavLink
+															to={
+																'/admin' +
+																(item.url.startsWith('/')
+																	? item.url
+																	: `/${item.url}`) +
+																(subItem.url.startsWith('/')
+																	? subItem.url
+																	: `/${subItem.url}`)
+															}
+															end
+														>
 															{({ isActive }) => (
 																<SidebarMenuSubButton
 																	className={

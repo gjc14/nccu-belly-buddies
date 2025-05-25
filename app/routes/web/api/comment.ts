@@ -2,15 +2,14 @@ import { redirect } from 'react-router'
 
 import { auth } from '~/lib/auth/auth.server'
 import { db } from '~/lib/db/db.server'
-import { rating } from '~/lib/db/schema/rating'
+import { comment } from '~/lib/db/schema/comment'
 
 /**
  * encType: form
  * {
  * 	restaurantId: string;
- *  score: number; // 1-5
+ * 	content: string; // 留言內容
  * }
- * @returns
  */
 export async function action({ request }: { request: Request }) {
 	const session = await auth.api.getSession(request)
@@ -19,29 +18,29 @@ export async function action({ request }: { request: Request }) {
 	const user = session.user
 	const formData = await request.formData()
 	const restaurantId = formData.get('restaurantId')?.toString()
-	const score = Number(formData.get('score'))
+	const content = formData.get('content')?.toString()
 
-	if (!restaurantId || !score) {
-		return { err: '請提供餐廳ID和評分' }
+	if (!restaurantId || !content) {
+		return { err: '請提供餐廳ID和留言內容' }
 	}
 
-	// 只能評一次
-	const exists = await db.query.rating.findFirst({
-		where: (r, { eq, and }) =>
-			and(eq(r.restaurantId, restaurantId), eq(r.userId, user.id)),
+	// 只能留言一次
+	const exists = await db.query.comment.findFirst({
+		where: (c, { eq, and }) =>
+			and(eq(c.restaurantId, restaurantId), eq(c.userId, user.id)),
 	})
 	if (exists) {
-		return { err: '你已經評分過了' }
+		return { err: '你已經留言過了' }
 	}
 
 	const result = await db
-		.insert(rating)
+		.insert(comment)
 		.values({
 			userId: user.id,
 			restaurantId,
-			score,
+			content,
 		})
 		.returning()
 
-	return { msg: '評分成功', data: result[0] }
+	return { msg: '留言成功', data: result[0] }
 }

@@ -1,77 +1,31 @@
-import {
-	redirect,
-	useLoaderData,
-	type ClientLoaderFunctionArgs,
-	type LoaderFunctionArgs,
-	type MetaFunction,
-} from 'react-router'
+import { db } from '~/lib/db/db.server'
 
-import { MainWrapper } from '~/components/wrappers'
-import { auth } from '~/lib/auth/auth.server'
-import { getSEO } from '~/lib/db/seo.server'
-import { createMeta } from '~/lib/utils/seo'
+import type { Route } from './+types/route'
+import { AppShell } from './components/app-shell'
+import { RoomList } from './components/room-list'
 
-import { Footer } from '../components/footer'
-import { Nav } from '../components/nav'
-import { Hero } from './hero'
-
-export const meta: MetaFunction<typeof loader> = ({ data, location }) => {
-	if (!data || !data.meta) {
-		return []
-	}
-
-	return data.meta.metaTags
-}
-
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-	const { seo } = await getSEO(new URL(request.url).pathname)
-	const meta = seo ? createMeta(seo, new URL(request.url)) : null
-
-	const session = await auth.api.getSession({
-		headers: request.headers,
+export async function loader() {
+	const activeGroups = await db.query.group.findMany({
+		where: (group, { eq }) => eq(group.status, 'active'),
+		with: {
+			restaurant: true,
+			creator: true,
+			groupMembers: true,
+		},
 	})
 
-	if (!session) {
-		console.log('No session found, redirecting to auth')
-		return redirect('/auth')
-	} else {
-		console.log('Session found, redirecting to dashboard')
-	}
-
-	try {
-		return { meta }
-	} catch (error) {
-		console.error(error)
-		return { meta }
-	}
+	return { activeGroups }
 }
 
-let cache: Awaited<ReturnType<typeof loader>>
-export const clientLoader = async ({
-	serverLoader,
-}: ClientLoaderFunctionArgs) => {
-	if (cache) {
-		return cache
-	}
-
-	cache = await serverLoader()
-	return cache
-}
-
-clientLoader.hydrate = true
-
-export default function Index() {
-	const { meta } = useLoaderData<typeof loader>()
+export default function Index({ loaderData }: Route.ComponentProps) {
+	const { activeGroups } = loaderData
 
 	return (
-		<>
-			<Nav />
-
-			<MainWrapper>
-				<h1 className="visually-hidden">{meta?.seo.metaTitle}</h1>
-				<Hero />
-				<Footer />
-			</MainWrapper>
-		</>
+		<AppShell>
+			<div className="container py-6">
+				<h1 className="text-3xl font-bold mb-6">Available Rooms</h1>
+				<RoomList groups={activeGroups} />
+			</div>
+		</AppShell>
 	)
 }

@@ -1,10 +1,3 @@
-/** 組員
- * 網址：http://localhost:5173/api/membership/123
- * /api/membership 是固定的，後面的 123 是變數，從 params.id 取得這個變數，請見 loader/action 的使用方法
- * 我有在 app/routes/web/routes.ts 設定 /:id
- * （「:id」表示變數名稱是 id 的變數，可以從 params.id 取得，也可以是「:membershipId」，那 params 就要用 params.membershipId 取得）
- */
-
 import { redirect } from 'react-router'
 
 import { and, eq, sql } from 'drizzle-orm'
@@ -21,13 +14,16 @@ import * as schema from '~/lib/db/schema'
 import type { ConventionalActionResponse } from '~/lib/utils'
 
 
-// action 負責處理 POST、PUT、DELETE request
-export async function action({ request, params }: Route.ActionArgs) {
-	// 如果沒有登入，重新導向登入頁面
+export async function action({
+	request,
+	params,
+}: {
+	request: Request
+	params: { id: string }
+}) {
 	const session = await auth.api.getSession(request)
 	if (!session) throw redirect('/auth')
 
-	const membershipId = params.id // 我有在 app/routes/web/routes.ts 設定 /:id
 	const user = session.user
 	const { groupId } = await request.json()
 	// 以下可以開始處理 user 與 membership id
@@ -80,9 +76,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 			// 4. Insert new member
 			const newMember = await db.insert(schema.groupMember).values({
 				groupId: groupId,
-				groupName: group.name,
 				userId: user.id,
-				userName: user.name,
 			})
 
 			if (userCount[0].count + 1 === groupData[0].numOfPeople) {
@@ -96,9 +90,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 				msg: '新成員已加入',
 				data: await db.insert(schema.groupMember).values({
 					groupId: groupId,
-					groupName: group.name,
 					userId: user.id,
-					userName: user.name,
 				}),
 			} satisfies ConventionalActionResponse
 		}

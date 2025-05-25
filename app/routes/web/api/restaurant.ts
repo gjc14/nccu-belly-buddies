@@ -7,42 +7,89 @@
 
 import { redirect } from 'react-router'
 
+import { eq } from 'drizzle-orm'
+
 import { auth } from '~/lib/auth/auth.server'
+import { db } from '~/lib/db/db.server'
+import { restaurant } from '~/lib/db/schema'
+import type { ConventionalActionResponse } from '~/lib/utils'
+import { validateAdminSession } from '~/routes/papa/auth/utils'
 
 import type { Route } from './+types/restaurant'
 
 // action 負責處理 POST、PUT、DELETE request
 export async function action({ request, params }: Route.ActionArgs) {
 	// 如果沒有登入，重新導向登入頁面
-	const session = await auth.api.getSession(request)
-	if (!session) throw redirect('/auth')
+	const adminSession = await validateAdminSession(request)
+
+	const admin = adminSession.user
 
 	const restaurantId = params.id // 我有在 app/routes/web/routes.ts 設定 /:id
-	const user = session.user
 	// 以下可以開始處理 user 與 restaurant id
 	// ...
 
 	switch (request.method) {
 		case 'POST':
 			// 處理 POST 請求，通常是用來創建新的資源
-			break
-		case 'PUT':
-			// 處理 PUT 請求，通常是用來更新現有的資源
-			break
+
+			const formData = await request.formData()
+			const name = formData.get('name')?.toString()
+			const description = formData.get('description')?.toString()
+			const address = formData.get('address')?.toString()
+			const phone = formData.get('phone')?.toString()
+			const openingHours = formData.get('openingHours')?.toString()
+			const cuisineType = formData.get('cuisineType')?.toString()
+			const priceRange = formData.get('priceRange')?.toString()
+			const rating = Number(formData.get('rating'))
+
+			if (
+				!name ||
+				!description ||
+				!address ||
+				!phone ||
+				!openingHours ||
+				!cuisineType ||
+				!priceRange ||
+				isNaN(rating)
+			) {
+				return {
+					err: '請提供完整的餐廳資訊',
+				} satisfies ConventionalActionResponse
+			}
+
+			const newRestaurant = await db
+				.insert(restaurant)
+				.values({
+					name,
+					description,
+					address,
+					phone,
+					openingHours,
+					cuisineType,
+					priceRange,
+					rating,
+				})
+				.returning()
+
+			return {
+				msg: `餐廳 ${newRestaurant[0].name} 已成功創建`,
+			} satisfies ConventionalActionResponse
 		case 'DELETE':
 			// 處理 DELETE 請求，通常是用來刪除資源
-			break
+
+			const restaurantDeleted = await db
+				.delete(restaurant)
+				.where(eq(restaurant.id, restaurantId))
+				.returning()
+
+			return {
+				msg: `餐廳 ${restaurantDeleted[0].name} 已成功刪除`,
+			}
 		default:
 			throw new Response('', {
 				status: 405,
 				statusText: 'Method Not Allowed',
 			})
-	}
-
-	// 返回資料
-	return {
-		api: '群組',
-		id: restaurantId,
 	}
 }
 
