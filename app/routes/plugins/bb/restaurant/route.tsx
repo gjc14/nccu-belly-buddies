@@ -1,9 +1,19 @@
 // example-plugin/example-admin-page/route.tsx
-import { useEffect } from 'react'
-import { useFetcher } from 'react-router'
+import { Form, useFetcher } from 'react-router'
+
+import type { ColumnDef } from '@tanstack/react-table'
 
 import { Button } from '~/components/ui/button'
-import type { ConventionalActionResponse } from '~/lib/utils'
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '~/components/ui/dialog'
+import { Input } from '~/components/ui/input'
+import { db } from '~/lib/db/db.server'
 import {
 	AdminActions,
 	AdminContent,
@@ -11,96 +21,130 @@ import {
 	AdminSectionWrapper,
 	AdminTitle,
 } from '~/routes/papa/admin/components/admin-wrapper'
+import {
+	AdminDataTableMoreMenu,
+	DataTable,
+} from '~/routes/papa/admin/components/data-table'
+// Admin route does not need metadata, which is for seo
+
+import { action } from '~/routes/web/api/restaurant'
 
 import type { Route } from './+types/route'
 
-// Admin route does not need metadata, which is for seo
+export { action }
 
-export const action = async ({ request }: Route.ActionArgs) => {
-	const formData = await request.formData()
-	const client = formData.get('client')
+export const loader = async () => {
+	const restaurants = await db.query.restaurant.findMany()
 
-	// Data got from the form is typed `FormDataEntryValue | null` so we need to check the type
-	if (!client || typeof client !== 'string') {
-		throw new Error('Client is not a string')
-	}
-
-	if (client === 'failed') {
-		return {
-			err: 'Hello from the action with conventional error return',
-		} satisfies ConventionalActionResponse
-	}
-
-	return {
-		msg: 'Hello from the action',
-	} satisfies ConventionalActionResponse
+	return { restaurants }
 }
 
-export default function AdminExample() {
+export default function AdminExample({ loaderData }: Route.ComponentProps) {
+	const { restaurants } = loaderData
 	const fetcher = useFetcher<typeof action>()
 
-	const handleClickError = async () => {
-		alert('Your going to see an intentional Internal Server Error')
-		fetcher.submit({ client: 'failed' }, { method: 'post' })
-	}
-
-	const handleClickSuccess = async () => {
-		alert('Sending correct data to the server action')
-		fetcher.submit({ client: 'success' }, { method: 'post' })
-	}
-
-	const handleClickTypeError = async () => {
-		alert('Sending type error data to the server action')
-		fetcher.submit({}, { method: 'post' })
-	}
-
-	useEffect(() => {
-		// Effect will run when the fetcher data changes (when the action is called)
-		if (fetcher.data) {
-			// This data will be typed because we assigned <typeof action> to fetcher
-			const data = fetcher.data
-			console.log('fetcher.data', data)
-		}
-	}, [fetcher.data])
+	const isSubmitting = fetcher.state === 'submitting'
 
 	return (
 		<AdminSectionWrapper>
 			<AdminHeader>
 				<AdminTitle title="Admin Route Example"></AdminTitle>
 				<AdminActions>
-					{/* You may put some buttons here */}
-					<Button
-						onClick={() => {
-							// Your function here
-							handleClickTypeError()
-						}}
-					>
-						Type Error
-					</Button>
-					<Button
-						onClick={() => {
-							// Your function here
-							handleClickError()
-						}}
-					>
-						Error
-					</Button>
-					<Button
-						onClick={() => {
-							// Your function here
-							handleClickSuccess()
-						}}
-					>
-						Success
-					</Button>
+					<Dialog>
+						<DialogTrigger asChild>
+							<Button>Create New Restaurant</Button>
+						</DialogTrigger>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>Create New Restaurant</DialogTitle>
+								<DialogDescription></DialogDescription>
+								<Form
+									className="space-y-2"
+									onSubmit={e => {
+										e.preventDefault()
+
+										fetcher.submit(e.currentTarget, { method: 'post' })
+									}}
+								>
+									<Input name="name" placeholder="Restaurant Name" required />
+									<Input
+										name="description"
+										placeholder="Description"
+										required
+									/>
+									<Input name="address" placeholder="Address" required />
+									<Input name="phone" placeholder="Phone" required />
+									<Input
+										name="openingHours"
+										placeholder="Opening Hours"
+										required
+									/>
+									<Input
+										name="cuisineType"
+										placeholder="Cuisine Type"
+										required
+									/>
+									<Input name="priceRange" placeholder="Price Range" required />
+									<Input
+										name="rating"
+										placeholder="Rating"
+										type="number"
+										required
+									/>
+									<Button type="submit" disabled={isSubmitting}>
+										{isSubmitting ? 'Creating...' : 'Create Restaurant'}
+									</Button>
+								</Form>
+							</DialogHeader>
+						</DialogContent>
+					</Dialog>
 				</AdminActions>
 			</AdminHeader>
 
 			<AdminContent>
-				{/* Your main content goes here */}
-				Write some content here
-				<p className="text-2xl font-bold">Main Content</p>
+				<DataTable columns={columns} data={restaurants}></DataTable>
 			</AdminContent>
 		</AdminSectionWrapper>
 	)
 }
+
+type LoaderData = Awaited<ReturnType<typeof loader>>
+
+const columns: ColumnDef<LoaderData['restaurants'][number]>[] = [
+	{
+		accessorKey: 'id',
+		header: 'Edit',
+		cell: ({ row }) => {
+			const fetcher = useFetcher()
+
+			const id = row.original.id
+			const name = row.original.name
+
+			return (
+				<>
+					<AdminDataTableMoreMenu
+						id={id}
+						deleteTarget={name}
+						onDelete={() => {
+							fetcher.submit(
+								{},
+								{
+									action: '/api/restaurant/' + id,
+									method: 'DELETE',
+								},
+							)
+						}}
+					></AdminDataTableMoreMenu>
+				</>
+			)
+		},
+	},
+	{ accessorKey: 'name', header: 'name' },
+	{ accessorKey: 'address', header: 'address' },
+	{ accessorKey: 'description', header: 'description' },
+	{ accessorKey: 'phone', header: 'phone' },
+	{ accessorKey: 'openingHours', header: 'openingHours' },
+	{ accessorKey: 'cuisineType', header: 'cuisineType' },
+	{ accessorKey: 'priceRange', header: 'priceRange' },
+	{ accessorKey: 'rating', header: 'rating' },
+]
