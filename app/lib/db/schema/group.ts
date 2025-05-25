@@ -54,6 +54,26 @@ export const groupMember = pgTable(
 	],
 )
 
-export const groupRelation = relations(group, ({ many }) => ({
+export const groupRelation = relations(group, ({ many, one }) => ({
 	groupMembers: many(groupMember),
+	restaurant: one(restaurant, {
+		fields: [group.restaurantID],
+		references: [restaurant.id],
+	}),
+	creator: one(user, {
+		fields: [group.creatorId],
+		references: [user.id],
+	}),
+}))
+
+// ✅ 群組成員關聯定義
+export const groupMemberRelation = relations(groupMember, ({ one }) => ({
+	group: one(group, {
+		fields: [groupMember.groupId],
+		references: [group.id],
+	}),
+	user: one(user, {
+		fields: [groupMember.userId],
+		references: [user.id],
+	}),
 }))

@@ -7,6 +7,11 @@ import { RoomList } from './components/room-list'
 export async function loader() {
 	const activeGroups = await db.query.group.findMany({
 		where: (group, { eq }) => eq(group.status, 'active'),
+		with: {
+			restaurant: true,
+			creator: true,
+			groupMembers: true,
+		},
 	})
 
 	return { activeGroups }
