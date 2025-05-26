@@ -35,6 +35,23 @@ interface CreateRoomFormProps {
 	onClose: () => void
 }
 
+// Function to get food emoji based on restaurant name
+const getFoodEmoji = (restaurantName: string): string => {
+  const name = restaurantName.toLowerCase()
+  if (name.includes("sushi") || name.includes("japanese")) return "🍣"
+  if (name.includes("burger") || name.includes("american")) return "🍔"
+  if (name.includes("pasta") || name.includes("italian")) return "🍝"
+  if (name.includes("taco") || name.includes("mexican")) return "🌮"
+  if (name.includes("pizza")) return "🍕"
+  if (name.includes("chinese")) return "🥢"
+  if (name.includes("thai")) return "🍜"
+  if (name.includes("indian")) return "🍛"
+  if (name.includes("korean")) return "🍲"
+  if (name.includes("coffee") || name.includes("cafe")) return "☕"
+  if (name.includes("dessert") || name.includes("bakery")) return "🧁"
+  return "🍽️" // Default food emoji
+}
+
 export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 	const fetcher = useFetcher()
 	const loadFetcher = useFetcher<typeof loader>()
@@ -104,17 +121,21 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
-				<DialogHeader>
-					<DialogTitle>Create a new room</DialogTitle>
-					<DialogDescription>
-						Set up a restaurant meetup for others to join.
-					</DialogDescription>
+			<DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto bg-gradient-to-br from-white to-orange-50 border-2 border-orange-200">
+				<DialogHeader className="text-center">
+          <div className="text-4xl mb-2">✨</div>
+					<DialogTitle className="text-orange-800 text-xl font-bold">Create a new room</DialogTitle>
+					 <DialogDescription className="text-orange-600">
+            Set up a restaurant meetup for others to join.
+          </DialogDescription>
 				</DialogHeader>
 				<Form onSubmit={handleSubmit}>
 					<div className="grid gap-4 py-4">
 						<div className="grid gap-2">
-							<Label htmlFor="groupName">Group Name</Label>{' '}
+							<Label htmlFor="groupName" className="text-orange-700 font-semibold flex items-center">
+                <span className="mr-2">🏷️</span>
+                Group Name
+              </Label>
 							{/* Changed from restaurantName */}
 							<Input
 								id="groupName"
@@ -122,10 +143,14 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 								value={formData.groupName}
 								onChange={handleChange}
 								required
+								className="border-orange-200 focus:border-orange-400 focus:ring-orange-200"
 							/>
 						</div>
 						<div className="grid gap-2">
-							<Label htmlFor="groupDescription">Description</Label>{' '}
+							 <Label htmlFor="groupDescription" className="text-orange-700 font-semibold flex items-center">
+                <span className="mr-2">📝</span>
+                Description
+              </Label>
 							{/* Changed from description */}
 							<Textarea
 								id="groupDescription"
@@ -133,10 +158,12 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 								value={formData.groupDescription}
 								onChange={handleChange}
 								required
+								className="border-orange-200 focus:border-orange-400 focus:ring-orange-200"
 							/>
 						</div>
 						<div className="grid gap-2">
-							<Label htmlFor="restaurantID">
+              <Label htmlFor="restaurantID" className="text-orange-700 font-semibold flex items-center">
+                <span className="mr-2">🍽️</span>
 								Restaurant {!!selectedRestaurant && ': '}
 								{!!selectedRestaurant &&
 									(restaurants.find(
@@ -146,15 +173,18 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 							</Label>{' '}
 							<Dialog>
 								<DialogTrigger asChild>
-									<Button onClick={fetchRestaurants}>選擇餐廳</Button>
+									<Button onClick={fetchRestaurants}
+									className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold"
+									><span className="mr-2">🔍</span>
+									選擇餐廳</Button>
 								</DialogTrigger>
-								<DialogContent className="max-h-[80vh] overflow-y-auto">
+								<DialogContent className="max-h-[80vh] overflow-y-auto bg-gradient-to-br from-white to-orange-50 border-2 border-orange-200">
 									<DialogHeader>
 										<DialogTitle>點擊選擇餐廳</DialogTitle>
 										<DialogDescription></DialogDescription>
 										<div className="flex flex-col space-y-2">
 											{isLoading ? (
-												<Loader className="animate-spin" />
+												<Loader className="animate-spin text-orange-500" />
 											) : restaurants.length > 0 ? (
 												<ul className="space-y-2">
 													{restaurants.map(restaurant => (
@@ -164,7 +194,7 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 																	onClick={() => {
 																		setSelectedRestaurant(restaurant.id)
 																	}}
-																	className="cursor-pointer hover:shadow-lg"
+																	className="cursor-pointer hover:shadow-lg transition-all duration-200 bg-gradient-to-br from-white to-orange-50 border-orange-200 hover:border-orange-300"
 																>
 																	<CardHeader>
 																		<CardTitle>{restaurant.name}</CardTitle>
@@ -196,7 +226,7 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 							</Dialog>
 						</div>
 						{/* Removed Location field, API uses restaurantID */}
-						<div className="grid grid-cols-2 gap-4">
+						<div className="grid gap-2">
 							<div className="grid gap-2">
 								<Label htmlFor="date">Date</Label>
 								<Input
