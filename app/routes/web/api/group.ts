@@ -7,23 +7,26 @@
 
 import { redirect } from 'react-router'
 
-import { and, asc, eq, sql } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 
 import { auth } from '~/lib/auth/auth.server'
 import { db } from '~/lib/db/db.server'
 import * as schema from '~/lib/db/schema'
 import type { ConventionalActionResponse } from '~/lib/utils'
-
 import type { Route } from './+types/group'
+import { validateAdminSession } from '~/routes/papa/auth/utils'
 
 // action 負責處理 POST、PUT、DELETE request
 export async function action({ request, params }: Route.ActionArgs) {
 	// 如果沒有登入，重新導向登入頁面
-	const session = await auth.api.getSession(request)
-	if (!session) throw redirect('/auth')
+	const userSession = await validateAdminSession(request)
+
+if (!userSession) {
+	throw redirect('/admin/portal')
+}
 
 	const groupId = params.id // 我有在 app/routes/web/routes.ts 設定 /:id
-	const user = session.user
+	const user = userSession.user
 	// 以下可以開始處理 user 與 group id
 	// ...
 
@@ -120,18 +123,6 @@ export async function action({ request, params }: Route.ActionArgs) {
 				data: updatedGroup,
 			} satisfies ConventionalActionResponse
 		case 'DELETE':
-			// 處理 DELETE 請求，通常是用來刪除資源
-			// 例如：
-			//const deletedGroup = await db
-			//	.delete(schema.group)
-			//	.where(eq(schema.group.id, groupId)) // 記得使用 where，不然所有資料都會被刪掉
-
-			//return {
-			//	msg: '群組已刪除',
-			//	data: deletedGroup,
-			//} satisfies ConventionalActionResponse
-
-			// 管理員退出群組可選擇刪除或變更管理員
 			const currentAdmin = await db
 				.select({ role: schema.groupMember.role })
 				.from(schema.groupMember)

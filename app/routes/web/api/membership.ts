@@ -6,8 +6,9 @@ import { auth } from '~/lib/auth/auth.server'
 import { db } from '~/lib/db/db.server'
 import * as schema from '~/lib/db/schema'
 import type { ConventionalActionResponse } from '~/lib/utils'
-
+import { validateAdminSession } from '~/routes/papa/auth/utils'
 import type { Route } from './+types/membership'
+
 
 export async function action({
 	request,
@@ -16,11 +17,14 @@ export async function action({
 	request: Request
 	params: { id: string }
 }) {
-	const session = await auth.api.getSession(request)
-	if (!session) throw redirect('/auth')
+		const userSession = await validateAdminSession(request)
+	
+	if (!userSession) {
+		throw redirect('/admin/portal')
+	}
 
-	const user = session.user
-	const { groupId } = await request.json()
+	const user = userSession.user
+	const  groupId  = params.id
 	// 以下可以開始處理 user 與 membership id
 	// ...
 
@@ -83,10 +87,7 @@ export async function action({
 
 			return {
 				msg: '新成員已加入',
-				data: await db.insert(schema.groupMember).values({
-					groupId: groupId,
-					userId: user.id,
-				}),
+				data: newMember,
 			} satisfies ConventionalActionResponse
 		}
 		case 'PUT':
