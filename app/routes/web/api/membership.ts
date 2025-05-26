@@ -24,7 +24,7 @@ export async function action({
 	}
 
 	const user = userSession.user
-	const { groupId } = await request.json()
+	const  groupId  = params.id
 	// 以下可以開始處理 user 與 membership id
 	// ...
 
@@ -87,10 +87,7 @@ export async function action({
 
 			return {
 				msg: '新成員已加入',
-				data: await db.insert(schema.groupMember).values({
-					groupId: groupId,
-					userId: user.id,
-				}),
+				data: newMember,
 			} satisfies ConventionalActionResponse
 		}
 		case 'PUT':
