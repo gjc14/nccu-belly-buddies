@@ -21,14 +21,14 @@ export function AppShell({ children }: AppShellProps) {
 			{/* Desktop Sidebar - Reduced width */}
 			<aside className="hidden md:flex w-52 flex-col border-rborder-orange-200 bg-gradient-to-b from-orange-100 to-yellow-100 p-4 shadow-lg">
 				<div className="flex items-center gap-2 mb-6 p-3 bg-white/70 rounded-xl shadow-sm">
-					<Utensils className="h-5 w-5" />
+					<Utensils className="h-5 w-5 text-black" />
 					<h1 className="text-lg font-bold bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-transparent">Belly Buddies</h1>
 				</div>
 
 				<nav className="space-y-3 mb-6">
 					<Link
 						to="/"
-						className="flex items-center gap-3 text-sm font-medium px-4 py-3rounded-xl hover:bg-white/60 transition-all duration-200 text-orange-800 hover:shadow-sm"
+						className="flex items-center gap-3 text-sm font-medium px-4 py-3 rounded-xl hover:bg-white/60 transition-all duration-200 text-orange-800 hover:shadow-sm"
 					>
 						Find Rooms
 					</Link>
@@ -45,7 +45,7 @@ export function AppShell({ children }: AppShellProps) {
 						onClick={() => setIsCreateRoomOpen(true)}
 						className="w-full text-sm py-3 px-4 h-auto bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
 					>
-						<PlusCircle className="h-3.5 w-3.5 mr-1.5" />
+						
 						<span className="text-lg mr-2">✨</span>
 						Create Room
 					</Button>
