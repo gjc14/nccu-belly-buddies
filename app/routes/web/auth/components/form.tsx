@@ -19,6 +19,7 @@ export function LoginForm({
 	onVerifyOtp: (email: string, otp: string) => void
 }) {
 	const [email, setEmail] = useState('')
+	const [otp, setOtp] = useState('')  //新增
 
 	return (
 		<div className={cn('flex flex-col gap-6', className)} {...props}>
@@ -81,7 +82,7 @@ export function LoginForm({
 								</div>
 								<div className="grid gap-2">
 									<Label htmlFor="otp">輸入 OTP 一次性驗證碼</Label>
-									<Input id="otp" type="otp" placeholder="123456" required />
+									<Input id="otp" type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="123456" required />
 								</div>
 								<Button type="submit" className="w-full">
 									登入
