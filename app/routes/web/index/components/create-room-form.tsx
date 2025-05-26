@@ -226,77 +226,94 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 							</Dialog>
 						</div>
 						{/* Removed Location field, API uses restaurantID */}
+						<div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="date" className="text-orange-700 font-semibold flex items-center">
+                  <span className="mr-2">📅</span>
+                  Date
+                </Label>
+                <Input
+                  id="date"
+                  name="date"
+                  type="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  required
+                  className="border-orange-200 focus:border-orange-400 focus:ring-orange-200"
+                />
+              </div>
+							 <div className="grid gap-2">
+                <Label htmlFor="time" className="text-orange-700 font-semibold flex items-center">
+                  <span className="mr-2">🕒</span>
+                  Time
+                </Label>
+                <Input
+                  id="time"
+                  name="time"
+                  type="time"
+                  value={formData.time}
+                  onChange={handleChange}
+                  required
+                  className="border-orange-200 focus:border-orange-400 focus:ring-orange-200"
+                />
+              </div>
+            </div>
+					 <div className="grid gap-2">
+              <Label htmlFor="numofPeople" className="text-orange-700 font-semibold flex items-center">
+                <span className="mr-2">👥</span>
+                Maximum People
+              </Label>
+              <Input
+                id="numofPeople"
+                name="numofPeople"
+                type="number"
+                min="2"
+                max="20"
+                value={formData.numofPeople}
+                onChange={handleChange}
+                required
+                className="border-orange-200 focus:border-orange-400 focus:ring-orange-200"
+              />
+            </div>
+						 <div className="grid gap-2">
+              <Label htmlFor="proposedBudget" className="text-orange-700 font-semibold flex items-center">
+                <span className="mr-2">💰</span>
+                Proposed Budget
+              </Label>
+              <Input
+                id="proposedBudget"
+                name="proposedBudget"
+                value={formData.proposedBudget}
+                onChange={handleChange}
+                className="border-orange-200 focus:border-orange-400 focus:ring-orange-200"
+              />
+            </div>
+						 <div className="grid gap-2">
+              <Label htmlFor="foodPreference" className="text-orange-700 font-semibold flex items-center">
+                <span className="mr-2">🍴</span>
+                Food Preference
+              </Label>
+              <Input
+                id="foodPreference"
+                name="foodPreference"
+                value={formData.foodPreference}
+                onChange={handleChange}
+                className="border-orange-200 focus:border-orange-400 focus:ring-orange-200"
+              />
+            </div>
 						<div className="grid gap-2">
-							<div className="grid gap-2">
-								<Label htmlFor="date">Date</Label>
-								<Input
-									id="date"
-									name="date"
-									type="date"
-									value={formData.date}
-									onChange={handleChange}
-									required
-								/>
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="time">Time</Label>
-								<Input
-									id="time"
-									name="time"
-									type="time"
-									value={formData.time}
-									onChange={handleChange}
-									required
-								/>
-							</div>
-						</div>
-						<div className="grid gap-2">
-							<Label htmlFor="numofPeople">Maximum People</Label>{' '}
-							{/* Changed from maxPeople */}
-							<Input
-								id="numofPeople"
-								name="numofPeople" // Changed from maxPeople
-								type="number"
-								min="2"
-								max="20" // Max can be adjusted based on requirements
-								value={formData.numofPeople}
-								onChange={handleChange}
-								required
-							/>
-						</div>
-						<div className="grid gap-2">
-							<Label htmlFor="proposedBudget">Proposed Budget</Label>{' '}
-							{/* New Field */}
-							<Input
-								id="proposedBudget"
-								name="proposedBudget"
-								value={formData.proposedBudget}
-								onChange={handleChange}
-								// required based on API - assuming not strictly required for now
-							/>
-						</div>
-						<div className="grid gap-2">
-							<Label htmlFor="foodPreference">Food Preference</Label>{' '}
-							{/* New Field */}
-							<Input
-								id="foodPreference"
-								name="foodPreference"
-								value={formData.foodPreference}
-								onChange={handleChange}
-								// required based on API - assuming not strictly required for now
-							/>
-						</div>
-						<div className="grid gap-2">
-							<Label htmlFor="spokenLanguage">Spoken Language</Label>{' '}
-							{/* New Field */}
-							<Input
-								id="spokenLanguage"
-								name="spokenLanguage"
-								value={formData.spokenLanguage}
-								onChange={handleChange}
-								// required based on API - assuming not strictly required for now
-							/>
-						</div>
+              <Label htmlFor="spokenLanguage" className="text-orange-700 font-semibold flex items-center">
+                <span className="mr-2">🗣️</span>
+                Spoken Language
+              </Label>
+              <Input
+                id="spokenLanguage"
+                name="spokenLanguage"
+                value={formData.spokenLanguage}
+                onChange={handleChange}
+                className="border-orange-200 focus:border-orange-400 focus:ring-orange-200"
+              />
+            </div>
 					</div>
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={onClose}>
