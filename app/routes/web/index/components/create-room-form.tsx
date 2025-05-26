@@ -1,21 +1,34 @@
 import type React from 'react'
-import { useState } from 'react'
-import { useFetcher } from 'react-router'
+import { useEffect, useRef, useState } from 'react'
+import { Form, useFetcher } from 'react-router'
 
-import { toast } from 'sonner'
+import { Loader } from 'lucide-react'
 
 import { Button } from '~/components/ui/button'
 import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from '~/components/ui/card'
+import {
 	Dialog,
+	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	DialogTrigger,
 } from '~/components/ui/dialog'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Textarea } from '~/components/ui/textarea'
+import { restaurant } from '~/lib/db/schema'
+
+import type { loader } from '../../api/restaurant'
 
 interface CreateRoomFormProps {
 	isOpen: boolean
@@ -24,6 +37,7 @@ interface CreateRoomFormProps {
 
 export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 	const fetcher = useFetcher()
+	const loadFetcher = useFetcher<typeof loader>()
 	const [formData, setFormData] = useState({
 		groupName: '', // Changed from restaurantName
 		groupDescription: '', // Changed from description
@@ -36,7 +50,29 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 		time: '',
 		spokenLanguage: '', // New field
 	})
-	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [restaurants, setRestaurants] = useState<
+		(typeof restaurant.$inferSelect)[]
+	>([]) // New state for restaurants
+	const [selectedRestaurant, setSelectedRestaurant] = useState<string | null>(
+		null,
+	) // id
+	const restaurantFetchedRef = useRef(false)
+
+	const isSubmitting = fetcher.state === 'submitting'
+	const isLoading = loadFetcher.state === 'loading'
+
+	useEffect(() => {
+		console.log('Loaded restaurants:', loadFetcher.data)
+		if (loadFetcher.data) {
+			setRestaurants(loadFetcher.data?.restaurants || [])
+		}
+	}, [loadFetcher.data])
+
+	const fetchRestaurants = () => {
+		if (restaurantFetchedRef.current) return // Prevent multiple fetches
+		restaurantFetchedRef.current = true
+		loadFetcher.load('/api/restaurant/all') // Load restaurants from the API
+	}
 
 	const handleChange = (
 		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -47,12 +83,11 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault()
-		setIsSubmitting(true)
 
 		const submitData = {
 			groupName: formData.groupName,
 			groupDescription: formData.groupDescription,
-			restaurantID: formData.restaurantID,
+			restaurantID: selectedRestaurant,
 			status: formData.status,
 			proposedBudget: formData.proposedBudget,
 			foodPreference: formData.foodPreference,
@@ -63,15 +98,8 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 
 		fetcher.submit(submitData, {
 			method: 'post',
-			action: '/api/group/create', // Kept existing action
+			action: '/api/group/create', // Kept existing action, use `create` as id
 		})
-
-		// Simulate API call
-		setTimeout(() => {
-			setIsSubmitting(false)
-			toast('Room created! Your room has been created successfully.')
-			onClose()
-		}, 1000)
 	}
 
 	return (
@@ -83,7 +111,7 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 						Set up a restaurant meetup for others to join.
 					</DialogDescription>
 				</DialogHeader>
-				<form onSubmit={handleSubmit}>
+				<Form onSubmit={handleSubmit}>
 					<div className="grid gap-4 py-4">
 						<div className="grid gap-2">
 							<Label htmlFor="groupName">Group Name</Label>{' '}
@@ -108,16 +136,64 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 							/>
 						</div>
 						<div className="grid gap-2">
-							{/* TODO: 從後端取得餐廳 */}
-							<Label htmlFor="restaurantID">Restaurant ID</Label>{' '}
-							{/* New Field */}
-							<Input
-								id="restaurantID"
-								name="restaurantID"
-								value={formData.restaurantID}
-								onChange={handleChange}
-								required // Assuming this is required by API
-							/>
+							<Label htmlFor="restaurantID">
+								Restaurant {!!selectedRestaurant && ': '}
+								{!!selectedRestaurant &&
+									(restaurants.find(
+										restaurant => restaurant.id === selectedRestaurant,
+									)?.name ||
+										'查無餐廳')}
+							</Label>{' '}
+							<Dialog>
+								<DialogTrigger asChild>
+									<Button onClick={fetchRestaurants}>選擇餐廳</Button>
+								</DialogTrigger>
+								<DialogContent className="max-h-[80vh] overflow-y-auto">
+									<DialogHeader>
+										<DialogTitle>點擊選擇餐廳</DialogTitle>
+										<DialogDescription></DialogDescription>
+										<div className="flex flex-col space-y-2">
+											{isLoading ? (
+												<Loader className="animate-spin" />
+											) : restaurants.length > 0 ? (
+												<ul className="space-y-2">
+													{restaurants.map(restaurant => (
+														<DialogClose key={restaurant.id} asChild>
+															<li>
+																<Card
+																	onClick={() => {
+																		setSelectedRestaurant(restaurant.id)
+																	}}
+																	className="cursor-pointer hover:shadow-lg"
+																>
+																	<CardHeader>
+																		<CardTitle>{restaurant.name}</CardTitle>
+																		{restaurant.description && (
+																			<CardDescription>
+																				{restaurant.description}
+																			</CardDescription>
+																		)}
+																	</CardHeader>
+																	<CardContent>
+																		<p>{restaurant.address}</p>
+																	</CardContent>
+																	{restaurant.phone && (
+																		<CardFooter>
+																			<p>{restaurant.phone}</p>
+																		</CardFooter>
+																	)}
+																</Card>
+															</li>
+														</DialogClose>
+													))}
+												</ul>
+											) : (
+												<p>No restaurants available</p>
+											)}
+										</div>
+									</DialogHeader>
+								</DialogContent>
+							</Dialog>
 						</div>
 						{/* Removed Location field, API uses restaurantID */}
 						<div className="grid grid-cols-2 gap-4">
@@ -200,7 +276,7 @@ export function CreateRoomForm({ isOpen, onClose }: CreateRoomFormProps) {
 							{isSubmitting ? 'Creating...' : 'Create Room'}
 						</Button>
 					</DialogFooter>
-				</form>
+				</Form>
 			</DialogContent>
 		</Dialog>
 	)
