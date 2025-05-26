@@ -13,17 +13,18 @@ import { auth } from '~/lib/auth/auth.server'
 import { db } from '~/lib/db/db.server'
 import * as schema from '~/lib/db/schema'
 import type { ConventionalActionResponse } from '~/lib/utils'
-import type { Route } from './+types/group'
 import { validateAdminSession } from '~/routes/papa/auth/utils'
+
+import type { Route } from './+types/group'
 
 // action 負責處理 POST、PUT、DELETE request
 export async function action({ request, params }: Route.ActionArgs) {
 	// 如果沒有登入，重新導向登入頁面
 	const userSession = await validateAdminSession(request)
 
-if (!userSession) {
-	throw redirect('/admin/portal')
-}
+	if (!userSession) {
+		throw redirect('/admin/portal')
+	}
 
 	const groupId = params.id // 我有在 app/routes/web/routes.ts 設定 /:id
 	const user = userSession.user
@@ -123,6 +124,7 @@ if (!userSession) {
 				data: updatedGroup,
 			} satisfies ConventionalActionResponse
 		case 'DELETE':
+			console.log('DELETE request received for groupId:', groupId)
 			const currentAdmin = await db
 				.select({ role: schema.groupMember.role })
 				.from(schema.groupMember)
@@ -133,7 +135,10 @@ if (!userSession) {
 					),
 				)
 
+			console.log('currentAdmin', currentAdmin)
+
 			if (currentAdmin[0]?.role === 'Admin') {
+				console.log('Admin is deleting the group')
 				// Check if the admin has chosen to delete the group
 				const formData = await request.formData()
 				const action = formData.get('action') // 'delete' or 'assign'
@@ -213,6 +218,11 @@ if (!userSession) {
 					} satisfies ConventionalActionResponse
 				}
 			}
+
+			console.log('User is not an admin, cannot delete group')
+			return {
+				err: '你不是管理員，無法刪除群組',
+			} satisfies ConventionalActionResponse
 		default:
 			throw new Response('', {
 				status: 405,

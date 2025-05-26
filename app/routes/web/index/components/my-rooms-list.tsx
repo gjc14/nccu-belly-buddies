@@ -24,87 +24,42 @@ import {
 	CardHeader,
 	CardTitle,
 } from '~/components/ui/card'
+import { authClient } from '~/lib/auth/auth-client'
 
 import type { Room } from './room-list'
-
-// Mock data for my rooms (host rooms)
-const mockHostRooms = [
-	{
-		id: '5',
-		restaurantName: 'Pizza Place',
-		description: 'Friday night pizza and games!',
-		location: '555 Maple Dr, Southside',
-		time: 'Friday, 8:00 PM',
-		maxPeople: 6,
-		currentPeople: 2,
-		isHost: true,
-		restaurantInfo: {
-			description:
-				'Artisanal pizza with wood-fired oven and craft beer selection.',
-			menuLink: 'https://example.com/pizza-place-menu',
-		},
-	},
-]
-
-// Load joined rooms from localStorage
-const loadJoinedRooms = () => {
-	try {
-		return JSON.parse(localStorage.getItem('myRooms') || '[]')
-	} catch (error) {
-		console.error('Error loading joined rooms:', error)
-		return []
-	}
-}
 
 export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 	const navigate = useNavigate()
 	const submit = useSubmit()
-	const [myRooms, setMyRooms] = useState<any[]>([])
+	const { data } = authClient.useSession()
 	const [roomToDelete, setRoomToDelete] = useState<string | null>(null)
 
-	// Load rooms on component mount
-	useEffect(() => {
-		const joinedRooms = loadJoinedRooms()
-		setMyRooms([...mockHostRooms, ...joinedRooms])
-	}, [])
-
-	const handleLeaveRoom = (e: any, roomId: string) => {
-		e.stopPropagation() // Prevent card click
-
-		// Remove from state
-		const updatedRooms = myRooms.filter(room => room.id !== roomId)
-		setMyRooms(updatedRooms)
-
-		// Update localStorage (only for joined rooms, not host rooms)
-		try {
-			const joinedRooms = loadJoinedRooms().filter(
-				(room: any) => room.id !== roomId,
-			)
-			localStorage.setItem('myRooms', JSON.stringify(joinedRooms))
-		} catch (error) {
-			console.error('Error updating localStorage:', error)
-		}
-
-		toast("Left room! You've successfully left the room.")
+	const handleLeaveRoom = (roomId: string) => {
+		submit(
+			{},
+			{
+				action: `/api/membership/${roomId}`,
+				method: 'delete',
+				navigate: false,
+			},
+		)
 	}
 
 	const handleDeleteRoom = () => {
-		if (roomToDelete) {
-			setMyRooms(myRooms.filter(room => room.id !== roomToDelete))
-			setRoomToDelete(null)
-			submit(
-				{ action: 'delete' },
-				{
-					action: `/api/group/${roomToDelete}`,
-					method: 'delete',
-					navigate: false,
-				},
-			)
-		}
+		submit(
+			{ action: 'delete' },
+			{
+				action: `/api/group/${roomToDelete}`,
+				method: 'delete',
+				navigate: false,
+			},
+		)
 	}
 
-	const handleCardClick = (roomId: string) => {
-		navigate(`/restaurant/${roomId}`)
+	const handleCardClick = (room: Room) => {
+		navigate(`/restaurant/${room.id}`, {
+			state: room,
+		})
 	}
 
 	const handleCommentClick = (e: any) => {
@@ -117,7 +72,7 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 		toast('Edit Edit room feature coming soon!')
 	}
 
-	if (myRooms.length === 0) {
+	if (rooms.length === 0) {
 		return (
 			<div className="text-center py-12">
 				<h3 className="text-lg font-medium mb-2">
@@ -134,29 +89,29 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 	return (
 		<>
 			<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-				{myRooms.map(room => (
+				{rooms.map(room => (
 					<Card
 						key={room.id}
 						className="overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
-						onClick={() => handleCardClick(room.id)}
+						onClick={() => handleCardClick(room)}
 					>
 						<CardHeader className="pb-3">
 							<div className="flex justify-between items-start">
 								<div>
-									<CardTitle>{room.restaurantName}</CardTitle>
+									<CardTitle>{room.name}</CardTitle>
 									<CardDescription className="mt-1">
 										{room.description}
 									</CardDescription>
 								</div>
 								<div className="flex flex-col items-center">
-									{room.host ? (
+									{room.creator ? (
 										<Avatar>
 											<AvatarImage
-												src={room.host.avatar || '/placeholders/avatar.png'}
-												alt={room.host.name}
+												src={room.creator.image || '/placeholders/avatar.png'}
+												alt={room.creator.name}
 											/>
 											<AvatarFallback>
-												{room.host.name?.charAt(0) || 'U'}
+												{room.creator.name?.charAt(0) || 'U'}
 											</AvatarFallback>
 										</Avatar>
 									) : (
@@ -165,7 +120,7 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 										</Avatar>
 									)}
 									<span className="text-xs text-muted-foreground mt-1">
-										{room.isHost ? 'You' : 'Host'}
+										{room.creatorId === data?.user.id ? 'You' : 'Host'}
 									</span>
 								</div>
 							</div>
@@ -173,16 +128,16 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 						<CardContent className="space-y-3 flex-1">
 							<div className="flex items-center text-sm">
 								<MapPin className="mr-2 h-4 w-4 opacity-70" />
-								<span>{room.location}</span>
+								<span>{room.restaurant?.address}</span>
 							</div>
 							<div className="flex items-center text-sm">
 								<Clock className="mr-2 h-4 w-4 opacity-70" />
-								<span>{room.time}</span>
+								<span>{room.startTime?.toDateString()}</span>
 							</div>
 							<div className="flex items-center text-sm">
 								<Users className="mr-2 h-4 w-4 opacity-70" />
 								<span>
-									{room.currentPeople} / {room.maxPeople} people
+									{room.groupMembers.length} / {room.numofPeople} people
 								</span>
 							</div>
 						</CardContent>
@@ -197,7 +152,7 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 								Comment
 							</Button>
 
-							{room.isHost ? (
+							{room.creatorId === data?.user.id ? (
 								<div className="flex gap-2" onClick={e => e.stopPropagation()}>
 									<Button variant="outline" size="sm" onClick={handleEditClick}>
 										<Edit className="h-4 w-4 mr-1" />
@@ -218,7 +173,10 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 							) : (
 								<Button
 									variant="destructive"
-									onClick={e => handleLeaveRoom(e, room.id)}
+									onClick={e => {
+										e.stopPropagation()
+										handleLeaveRoom(room.id)
+									}}
 								>
 									Leave Room
 								</Button>
