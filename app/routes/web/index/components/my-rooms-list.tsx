@@ -25,6 +25,8 @@ import {
 	CardTitle,
 } from '~/components/ui/card'
 
+import type { Room } from './room-list'
+
 // Mock data for my rooms (host rooms)
 const mockHostRooms = [
 	{
@@ -54,7 +56,7 @@ const loadJoinedRooms = () => {
 	}
 }
 
-export function MyRoomsList() {
+export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 	const navigate = useNavigate()
 	const submit = useSubmit()
 	const [myRooms, setMyRooms] = useState<any[]>([])
