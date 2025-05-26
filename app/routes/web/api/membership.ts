@@ -119,7 +119,7 @@ export async function action({
 				.where(
 					and(
 						eq(schema.groupMember.userId, user.id),
-						eq(schema.groupMember.groupId, schema.group.id),
+						eq(schema.groupMember.groupId, groupId),
 					),
 				)
 			return {
@@ -133,7 +133,7 @@ export async function action({
 				.where(
 					and(
 						eq(schema.groupMember.userId, user.id),
-						eq(schema.groupMember.groupId, schema.group.id),
+						eq(schema.groupMember.groupId, groupId),
 					),
 				)
 
