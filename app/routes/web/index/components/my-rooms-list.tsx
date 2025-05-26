@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useSubmit } from 'react-router'
+import { useState } from 'react'
+import { useFetcher, useNavigate } from 'react-router'
 
 import { Clock, Edit, MapPin, MessageSquare, Trash2, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -24,34 +24,46 @@ import {
 	CardHeader,
 	CardTitle,
 } from '~/components/ui/card'
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from '~/components/ui/dialog'
+import { Textarea } from '~/components/ui/textarea'
 import { authClient } from '~/lib/auth/auth-client'
 
 import type { Room } from './room-list'
 
 export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 	const navigate = useNavigate()
-	const submit = useSubmit()
+	const fetcher = useFetcher()
 	const { data } = authClient.useSession()
 	const [roomToDelete, setRoomToDelete] = useState<string | null>(null)
+	const [commentRoomId, setCommentRoomId] = useState<string | null>(null)
+	const [commentText, setCommentText] = useState<string>('')
+
+	const isSubmitting = fetcher.state === 'submitting'
 
 	const handleLeaveRoom = (roomId: string) => {
-		submit(
+		fetcher.submit(
 			{},
 			{
 				action: `/api/membership/${roomId}`,
 				method: 'delete',
-				navigate: false,
 			},
 		)
 	}
 
 	const handleDeleteRoom = () => {
-		submit(
+		fetcher.submit(
 			{ action: 'delete' },
 			{
 				action: `/api/group/${roomToDelete}`,
 				method: 'delete',
-				navigate: false,
 			},
 		)
 	}
@@ -62,9 +74,30 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 		})
 	}
 
-	const handleCommentClick = (e: any) => {
+	const handleCommentClick = (e: React.MouseEvent, resId: string) => {
 		e.stopPropagation() // Prevent card click
-		toast('Comment Restaurant review feature coming soon!')
+		setCommentRoomId(resId)
+	}
+
+	const handleCommentSubmit = () => {
+		if (!commentRoomId || !commentText.trim()) {
+			toast.error('請提供留言內容')
+			return
+		}
+
+		fetcher.submit(
+			{
+				restaurantId: commentRoomId,
+				content: commentText,
+			},
+			{
+				action: `/api/comment/${commentRoomId}`,
+				method: 'post',
+			},
+		)
+
+		setCommentText('')
+		setCommentRoomId(null)
 	}
 
 	const handleEditClick = (e: any) => {
@@ -146,7 +179,7 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 								variant="ghost"
 								size="sm"
 								className="text-muted-foreground hover:text-foreground p-0"
-								onClick={handleCommentClick}
+								onClick={e => handleCommentClick(e, room.restaurantID || '')}
 							>
 								<MessageSquare className="mr-1 h-4 w-4" />
 								Comment
@@ -206,6 +239,32 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			<Dialog
+				open={!!commentRoomId}
+				onOpenChange={open => !open && setCommentRoomId(null)}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>留言評論</DialogTitle>
+						<DialogDescription>分享您對這家餐廳的看法和體驗</DialogDescription>
+					</DialogHeader>
+					<div className="py-4">
+						<Textarea
+							placeholder="請輸入您的留言..."
+							value={commentText}
+							onChange={e => setCommentText(e.target.value)}
+							rows={4}
+						/>
+					</div>
+					<DialogFooter>
+						<DialogClose asChild>
+							<Button variant="outline">取消</Button>
+						</DialogClose>
+						<Button onClick={handleCommentSubmit}>提交留言</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	)
 }
