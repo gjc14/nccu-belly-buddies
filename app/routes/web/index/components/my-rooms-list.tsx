@@ -36,6 +36,7 @@ import {
 import { Textarea } from '~/components/ui/textarea'
 import { authClient } from '~/lib/auth/auth-client'
 
+import { EditRoomForm } from './edit-room-form'
 import type { Room } from './room-list'
 
 export function MyRoomsList({ rooms }: { rooms: Room[] }) {
@@ -45,6 +46,8 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 	const [roomToDelete, setRoomToDelete] = useState<string | null>(null)
 	const [commentRoomId, setCommentRoomId] = useState<string | null>(null)
 	const [commentText, setCommentText] = useState<string>('')
+	const [editRoomOpen, setEditRoomOpen] = useState<boolean>(false)
+	const [roomToEdit, setRoomToEdit] = useState<Room | null>(null)
 
 	const isSubmitting = fetcher.state === 'submitting'
 
@@ -100,9 +103,10 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 		setCommentRoomId(null)
 	}
 
-	const handleEditClick = (e: any) => {
+	const handleEditClick = (e: React.MouseEvent, room: Room) => {
 		e.stopPropagation() // Prevent card click
-		toast('Edit Edit room feature coming soon!')
+		setRoomToEdit(room)
+		setEditRoomOpen(true)
 	}
 
 	if (rooms.length === 0) {
@@ -187,7 +191,11 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 
 							{room.creatorId === data?.user.id ? (
 								<div className="flex gap-2" onClick={e => e.stopPropagation()}>
-									<Button variant="outline" size="sm" onClick={handleEditClick}>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={e => handleEditClick(e, room)}
+									>
 										<Edit className="h-4 w-4 mr-1" />
 										Edit
 									</Button>
@@ -265,6 +273,12 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			<EditRoomForm
+				isOpen={editRoomOpen}
+				onClose={() => setEditRoomOpen(false)}
+				room={roomToEdit}
+			/>
 		</>
 	)
 }
