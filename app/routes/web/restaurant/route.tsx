@@ -12,6 +12,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '~/components/ui/card'
+import { authClient } from '~/lib/auth/auth-client'
 
 import type { action } from '../api/membership'
 import { AppShell } from '../index/components/app-shell'
@@ -23,6 +24,7 @@ export default function RestaurantDetails() {
 	const roomFromLocation = useLocation().state as Room
 	const [room, setRoom] = useState<Room>(roomFromLocation)
 	const [error, setError] = useState<string | null>(null)
+	const { data } = authClient.useSession()
 
 	const isSubmitting = fetcher.state === 'submitting'
 
@@ -175,7 +177,8 @@ export default function RestaurantDetails() {
 										onClick={handleJoinRoom}
 										disabled={
 											room.groupMembers.length >= room.numofPeople ||
-											isSubmitting
+											isSubmitting ||
+											room.creatorId === data?.user.id
 										}
 									>
 										Join Meetup

@@ -13,6 +13,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '~/components/ui/card'
+import { authClient } from '~/lib/auth/auth-client'
 import type { group, groupMember, restaurant, user } from '~/lib/db/schema'
 
 // Define the new Room type based on user's specification
@@ -29,6 +30,7 @@ export function RoomList({
 }) {
 	const navigate = useNavigate()
 	const fetcher = useFetcher()
+	const { data } = authClient.useSession()
 
 	const handleJoinRoom = (room: Room) => {
 		fetcher.submit(
@@ -129,7 +131,10 @@ export function RoomList({
 								e.stopPropagation()
 								handleJoinRoom(group)
 							}}
-							disabled={group.groupMembers.length >= group.numofPeople} // Assuming currentPeople and numofPeople are in Room type
+							disabled={
+								group.groupMembers.length >= group.numofPeople ||
+								group.creatorId === data?.user.id
+							} // Assuming currentPeople and numofPeople are in Room type
 						>
 							Join
 						</Button>
