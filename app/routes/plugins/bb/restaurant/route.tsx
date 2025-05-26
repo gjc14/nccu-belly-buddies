@@ -48,7 +48,7 @@ export default function AdminExample({ loaderData }: Route.ComponentProps) {
 	return (
 		<AdminSectionWrapper>
 			<AdminHeader>
-				<AdminTitle title="Admin Route Example"></AdminTitle>
+				<AdminTitle title="Restaurant"></AdminTitle>
 				<AdminActions>
 					<Dialog>
 						<DialogTrigger asChild>
