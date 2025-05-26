@@ -71,7 +71,7 @@ export async function action({
 			}
 
 			// 4. Insert new member
-			const newMember = await db.insert(schema.groupMember).values({
+			await db.insert(schema.groupMember).values({
 				groupId: groupId,
 				userId: user.id,
 			})
@@ -83,9 +83,18 @@ export async function action({
 					.where(eq(schema.group.id, groupId))
 			}
 
+			const updatedGroup = await db.query.group.findFirst({
+				where: eq(schema.group.id, groupId),
+				with: {
+					restaurant: true,
+					creator: true,
+					groupMembers: true,
+				},
+			})
+
 			return {
 				msg: '新成員已加入',
-				data: newMember,
+				data: updatedGroup,
 			} satisfies ConventionalActionResponse
 		}
 		case 'PUT':
