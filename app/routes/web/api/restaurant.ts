@@ -5,11 +5,8 @@
  * （「:id」表示變數名稱是 id 的變數，可以從 params.id 取得，也可以是「:restaurantId」，那 params 就要用 params.restaurantId 取得）
  */
 
-import { redirect } from 'react-router'
-
 import { eq } from 'drizzle-orm'
 
-import { auth } from '~/lib/auth/auth.server'
 import { db } from '~/lib/db/db.server'
 import { restaurant } from '~/lib/db/schema'
 import type { ConventionalActionResponse } from '~/lib/utils'
@@ -95,18 +92,13 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 // Loader 負責處理 GET request
 export async function loader({ request, params }: Route.LoaderArgs) {
-	// 如果沒有登入，重新導向登入頁面
-	const session = await auth.api.getSession(request)
-	if (!session) throw redirect('/auth')
-
-	const restaurantId = params.id // 我有在 app/routes/web/routes.ts 設定 /:id
-	const user = session.user
-	// 以下可以開始處理 user 與 restaurant id
-	// ...
-
-	// 返回資料
-	return {
-		api: '群組',
-		id: restaurantId,
+	if (!params.id && params.id !== 'all') {
+		throw new Response('Restaurant ID is required', {
+			status: 400,
+			statusText: 'Bad Request',
+		})
 	}
+	const restaurants = await db.query.restaurant.findMany()
+
+	return { restaurants }
 }
