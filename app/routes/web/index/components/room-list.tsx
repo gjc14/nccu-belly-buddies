@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router'
+import { useFetcher, useNavigate } from 'react-router'
 
 import { Clock, MapPin, Star, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -16,7 +16,7 @@ import {
 import type { group, groupMember, restaurant, user } from '~/lib/db/schema'
 
 // Define the new Room type based on user's specification
-type Room = typeof group.$inferSelect & {
+export type Room = typeof group.$inferSelect & {
 	restaurant: typeof restaurant.$inferSelect | null
 	creator: typeof user.$inferSelect
 	groupMembers: (typeof groupMember.$inferSelect)[]
@@ -28,22 +28,26 @@ export function RoomList({
 	groups: Room[] // Updated prop type to use the new Room interface
 }) {
 	const navigate = useNavigate()
+	const fetcher = useFetcher()
 
 	const handleJoinRoom = (room: Room) => {
-		// TODO: Call API to join the room
-
-		toast(
-			"Joined room! You've successfully joined the room. Check 'My Rooms' to see it.",
+		fetcher.submit(
+			{},
+			{
+				method: 'post',
+				action: '/api/membership/' + room.id, // Adjust the action URL as needed
+			},
 		)
 	}
 
-	const handleCardClick = (roomId: string) => {
-		navigate(`/restaurant/${roomId}`) // Assuming roomId still maps to a restaurant detail page
+	const handleCardClick = (roomId: string, room: Room) => {
+		navigate(`/restaurant/${roomId}`, {
+			state: room,
+		}) // Assuming roomId still maps to a restaurant detail page
 	}
 
 	const handleReviewsClick = (roomId: string) => {
 		// TODO: Implement reviews feature
-
 		toast('Reviews Restaurant reviews feature coming soon!')
 	}
 
@@ -53,7 +57,7 @@ export function RoomList({
 				<Card
 					key={group.id}
 					className="overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
-					onClick={() => handleCardClick(group.id)}
+					onClick={() => handleCardClick(group.id, group)}
 				>
 					<CardHeader className="pb-3">
 						<div className="flex justify-between items-start">
@@ -112,14 +116,20 @@ export function RoomList({
 							variant="ghost"
 							size="sm"
 							className="text-muted-foreground hover:text-foreground p-0"
-							onClick={e => handleReviewsClick(group.id)}
+							onClick={e => {
+								e.stopPropagation()
+								handleReviewsClick(group.id)
+							}}
 						>
 							<Star className="mr-1 h-4 w-4" />
 							Reviews
 						</Button>
 						<Button
-							onClick={() => handleJoinRoom(group)}
-							disabled={group.groupMembers.length + 1 >= group.numofPeople} // Assuming currentPeople and numofPeople are in Room type
+							onClick={e => {
+								e.stopPropagation()
+								handleJoinRoom(group)
+							}}
+							disabled={group.groupMembers.length >= group.numofPeople} // Assuming currentPeople and numofPeople are in Room type
 						>
 							Join
 						</Button>

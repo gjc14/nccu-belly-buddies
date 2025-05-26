@@ -19,10 +19,11 @@ export async function action({
 	const session = await auth.api.getSession(request)
 	if (!session) throw redirect('/auth')
 
-	const user = session.user
-	const { groupId } = await request.json()
+	const groupId = params.id
 	// 以下可以開始處理 user 與 membership id
 	// ...
+
+	const user = session.user
 
 	switch (request.method) {
 		case 'POST': {
@@ -57,6 +58,7 @@ export async function action({
 
 			// 3. Check if user count >= group's member limit
 			if (userCount[0].count >= groupData[0].numOfPeople!) {
+				console.log(`Group ${groupId} is full. Cannot add more members.`)
 				await db
 					.update(schema.group)
 					.set({ status: 'full' })
@@ -69,7 +71,7 @@ export async function action({
 			}
 
 			// 4. Insert new member
-			const newMember = await db.insert(schema.groupMember).values({
+			await db.insert(schema.groupMember).values({
 				groupId: groupId,
 				userId: user.id,
 			})
@@ -81,12 +83,18 @@ export async function action({
 					.where(eq(schema.group.id, groupId))
 			}
 
+			const updatedGroup = await db.query.group.findFirst({
+				where: eq(schema.group.id, groupId),
+				with: {
+					restaurant: true,
+					creator: true,
+					groupMembers: true,
+				},
+			})
+
 			return {
 				msg: '新成員已加入',
-				data: await db.insert(schema.groupMember).values({
-					groupId: groupId,
-					userId: user.id,
-				}),
+				data: updatedGroup,
 			} satisfies ConventionalActionResponse
 		}
 		case 'PUT':
