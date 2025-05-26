@@ -16,7 +16,7 @@ import {
 import type { group, groupMember, restaurant, user } from '~/lib/db/schema'
 
 // Define the new Room type based on user's specification
-type Room = typeof group.$inferSelect & {
+export type Room = typeof group.$inferSelect & {
 	restaurant: typeof restaurant.$inferSelect | null
 	creator: typeof user.$inferSelect
 	groupMembers: (typeof groupMember.$inferSelect)[]
@@ -31,8 +31,6 @@ export function RoomList({
 	const fetcher = useFetcher()
 
 	const handleJoinRoom = (room: Room) => {
-		// TODO: Call API to join the room
-
 		fetcher.submit(
 			{},
 			{
@@ -42,8 +40,10 @@ export function RoomList({
 		)
 	}
 
-	const handleCardClick = (roomId: string) => {
-		navigate(`/restaurant/${roomId}`) // Assuming roomId still maps to a restaurant detail page
+	const handleCardClick = (roomId: string, room: Room) => {
+		navigate(`/restaurant/${roomId}`, {
+			state: room,
+		}) // Assuming roomId still maps to a restaurant detail page
 	}
 
 	const handleReviewsClick = (roomId: string) => {
@@ -57,7 +57,7 @@ export function RoomList({
 				<Card
 					key={group.id}
 					className="overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
-					onClick={() => handleCardClick(group.id)}
+					onClick={() => handleCardClick(group.id, group)}
 				>
 					<CardHeader className="pb-3">
 						<div className="flex justify-between items-start">
