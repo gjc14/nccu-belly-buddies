@@ -135,7 +135,12 @@ export function MyRoomsList({ rooms }: { rooms: Room[] }) {
 						<CardHeader className="pb-3">
 							<div className="flex justify-between items-start">
 								<div>
-									<CardTitle>{room.name}</CardTitle>
+									<CardTitle>
+										{room.name}
+										<span className="text-sm ml-2">
+											@ {room.restaurant?.name}
+										</span>
+									</CardTitle>
 									<CardDescription className="mt-1">
 										{room.description}
 									</CardDescription>

@@ -64,7 +64,12 @@ export function RoomList({
 					<CardHeader className="pb-3">
 						<div className="flex justify-between items-start">
 							<div>
-								<CardTitle>{group.name}</CardTitle>{' '}
+								<CardTitle>
+									{group.name}
+									<span className="text-sm ml-2">
+										@ {group.restaurant?.name}
+									</span>
+								</CardTitle>{' '}
 								<CardDescription className="mt-1">
 									{group.description ?? 'No description available.'}{' '}
 									{/* Handle null description */}
