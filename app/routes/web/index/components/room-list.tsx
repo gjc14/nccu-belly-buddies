@@ -133,7 +133,10 @@ export function RoomList({
 							}}
 							disabled={
 								group.groupMembers.length >= group.numofPeople ||
-								group.creatorId === data?.user.id
+								group.creatorId === data?.user.id ||
+								group.groupMembers.some(
+									member => member.userId === data?.user.id,
+								)
 							} // Assuming currentPeople and numofPeople are in Room type
 						>
 							Join
