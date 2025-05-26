@@ -6,9 +6,8 @@ import { auth } from '~/lib/auth/auth.server'
 import { db } from '~/lib/db/db.server'
 import * as schema from '~/lib/db/schema'
 import type { ConventionalActionResponse } from '~/lib/utils'
-import { validateAdminSession } from '~/routes/papa/auth/utils'
-import type { Route } from './+types/membership'
 
+import type { Route } from './+types/membership'
 
 export async function action({
 	request,
@@ -17,16 +16,14 @@ export async function action({
 	request: Request
 	params: { id: string }
 }) {
-		const userSession = await validateAdminSession(request)
-	
-	if (!userSession) {
-		throw redirect('/admin/portal')
-	}
+	const session = await auth.api.getSession(request)
+	if (!session) throw redirect('/auth')
 
-	const user = userSession.user
-	const  groupId  = params.id
+	const groupId = params.id
 	// 以下可以開始處理 user 與 membership id
 	// ...
+
+	const user = session.user
 
 	switch (request.method) {
 		case 'POST': {
@@ -61,6 +58,7 @@ export async function action({
 
 			// 3. Check if user count >= group's member limit
 			if (userCount[0].count >= groupData[0].numOfPeople!) {
+				console.log(`Group ${groupId} is full. Cannot add more members.`)
 				await db
 					.update(schema.group)
 					.set({ status: 'full' })
