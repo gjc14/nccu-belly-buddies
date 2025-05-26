@@ -18,7 +18,7 @@
  */
 
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { redirect, useNavigate } from 'react-router'
 
 import { Loader2 } from 'lucide-react'
 //是否顯示OTP輸入欄
@@ -36,17 +36,23 @@ import {
 } from '~/components/ui/alert-dialog'
 //顯示錯誤或成功的訊息
 import { authClient } from '~/lib/auth/auth-client'
+import { auth } from '~/lib/auth/auth.server'
 
+import type { Route } from './+types/route'
 //驗證API客戶端
 import { LoginForm } from './components/form'
 
 //顯示email跟OTP輸入欄位
-export async function loader() {
-	console.log('web auth loader')
-
-	return {
-		hi: 'return anything as json',
+export async function loader({ request }: Route.LoaderArgs) {
+	const session = await auth.api.getSession({
+		headers: request.headers,
+	})
+	if (session) {
+		console.log('已經登入，跳轉到首頁')
+		return redirect('/')
 	}
+	console.log('未登入，顯示登入頁面')
+	return null
 }
 
 // If this is going to be a component route instead of an api route, add a default export component
